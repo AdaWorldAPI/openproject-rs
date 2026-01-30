@@ -1,0 +1,7 @@
+[package]
+name = "op-users"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+op-core = { path = "../op-core" }

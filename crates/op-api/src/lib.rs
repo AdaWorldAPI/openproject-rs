@@ -4,12 +4,9 @@
 //!
 //! This crate implements the HAL+JSON API matching OpenProject's API v3.
 
-pub mod routes;
-pub mod handlers;
-pub mod representers;
-pub mod schemas;
-pub mod extractors;
-pub mod middleware;
 pub mod error;
+pub mod extractors;
+pub mod handlers;
+pub mod routes;
 
 pub use routes::router;
