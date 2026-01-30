@@ -1,0 +1,19 @@
+[package]
+name = "op-api"
+version.workspace = true
+edition.workspace = true
+description = "REST API v3 handlers for OpenProject RS"
+
+[dependencies]
+op-core = { path = "../op-core" }
+op-models = { path = "../op-models" }
+op-services = { path = "../op-services" }
+op-auth = { path = "../op-auth" }
+
+axum.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true

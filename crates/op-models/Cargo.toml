@@ -1,0 +1,15 @@
+[package]
+name = "op-models"
+version.workspace = true
+edition.workspace = true
+description = "Domain models for OpenProject RS"
+
+[dependencies]
+op-core = { path = "../op-core" }
+
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+validator.workspace = true
+sqlx.workspace = true

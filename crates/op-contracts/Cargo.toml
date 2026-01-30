@@ -1,0 +1,14 @@
+[package]
+name = "op-contracts"
+version.workspace = true
+edition.workspace = true
+description = "Contract validation for OpenProject RS"
+
+[dependencies]
+op-core = { path = "../op-core" }
+op-models = { path = "../op-models" }
+
+serde.workspace = true
+chrono.workspace = true
+validator.workspace = true
+async-trait.workspace = true

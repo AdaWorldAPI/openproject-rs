@@ -1,0 +1,16 @@
+[package]
+name = "op-db"
+version.workspace = true
+edition.workspace = true
+description = "Database layer for OpenProject RS"
+
+[dependencies]
+op-core = { path = "../op-core" }
+op-models = { path = "../op-models" }
+
+sqlx.workspace = true
+tokio.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+chrono.workspace = true
+tracing.workspace = true

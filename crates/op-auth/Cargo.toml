@@ -1,0 +1,19 @@
+[package]
+name = "op-auth"
+version.workspace = true
+edition.workspace = true
+description = "Authentication and authorization for OpenProject RS"
+
+[dependencies]
+op-core = { path = "../op-core" }
+op-models = { path = "../op-models" }
+
+axum.workspace = true
+tokio.workspace = true
+jsonwebtoken.workspace = true
+argon2.workspace = true
+oauth2.workspace = true
+serde.workspace = true
+chrono.workspace = true
+tracing.workspace = true
+async-trait.workspace = true
