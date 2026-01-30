@@ -76,6 +76,16 @@ impl ValidationErrors {
         self.errors.is_empty() && self.base_errors.is_empty()
     }
 
+    /// Check if there are errors for a specific field
+    pub fn has_error(&self, field: &str) -> bool {
+        self.errors.contains_key(field)
+    }
+
+    /// Get errors for a specific field
+    pub fn get(&self, field: &str) -> Option<&Vec<String>> {
+        self.errors.get(field)
+    }
+
     pub fn merge(&mut self, other: ValidationErrors) {
         for (field, messages) in other.errors {
             self.errors.entry(field).or_default().extend(messages);

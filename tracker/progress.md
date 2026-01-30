@@ -6,45 +6,50 @@ Last Updated: 2026-01-30
 
 | Component | Total | Done | Progress |
 |-----------|-------|------|----------|
-| Core Types | ~20 | 10 | 50% |
-| Models | ~80 | 2 | 2.5% |
-| Contracts | ~50 | 1 | 2% |
+| Core Types | ~20 | 12 | 60% |
+| Models | ~80 | 9 | 11% |
+| Contracts | ~50 | 5 | 10% |
 | Services | ~100 | 0 | 0% |
-| API Endpoints | ~150 | 4 | 2.5% |
+| API Endpoints | ~150 | 8 | 5% |
 | Representers | ~30 | 0 | 0% |
 | Database | ~100 tables | 0 | 0% |
-| **Overall** | **~530** | **17** | **~3%** |
+| **Overall** | **~530** | **34** | **~6%** |
 
-## Phase 1: Core Foundation (op-core) 🟡
+## Phase 1: Core Foundation (op-core) 🟢
 
 | Item | Status | Notes |
 |------|--------|-------|
 | Error types | 🟢 | OpError, ValidationErrors, ContractError |
 | Result types | 🟢 | OpResult, ServiceResult |
-| Core traits | 🟢 | Entity, Service, Contract, Repository |
-| Common types | 🟢 | Formattable, Duration, Color, etc. |
-| Pagination | 🟢 | PaginatedResponse, FilterParams |
+| Core traits | 🟢 | Entity, Service, Contract, Repository, HalRepresentable |
+| Common types | 🟢 | Formattable, Duration, Color, UserStatus |
+| Pagination | 🟢 | PaginatedResponse, FilterParams, FilterOperator |
 | Configuration | 🟡 | AppConfig defined, loading TBD |
 
-## Phase 2: Data Layer ⬜
+## Phase 2: Data Layer 🟡
 
 ### Models (op-models)
-| Domain | Status | Count |
-|--------|--------|-------|
-| Users | 🟡 | 1/7 |
-| Projects | ⬜ | 0/4 |
-| Work Packages | ⬜ | 0/7 |
-| Memberships | ⬜ | 0/4 |
-| Custom Fields | ⬜ | 0/10+ |
-| Journals | ⬜ | 0/3 |
-| Attachments | ⬜ | 0/3 |
-| Notifications | ⬜ | 0/3 |
-| Queries | ⬜ | 0/3 |
-| Time/Costs | ⬜ | 0/6 |
-| Wiki/Docs | ⬜ | 0/5 |
-| Meetings | ⬜ | 0/4 |
-| OAuth | ⬜ | 0/4 |
-| Other | ⬜ | 0/20+ |
+| Domain | Status | Count | Files |
+|--------|--------|-------|-------|
+| Users | 🟢 | 1/7 | user/model.rs |
+| Projects | 🟢 | 1/4 | project/model.rs |
+| Work Packages | 🟢 | 1/7 | work_package/model.rs |
+| Statuses | 🟢 | 1/1 | status.rs |
+| Types | 🟢 | 1/1 | type_def.rs |
+| Priorities | 🟢 | 1/1 | priority.rs |
+| Versions | 🟢 | 1/1 | version.rs |
+| Members | 🟢 | 1/4 | member.rs |
+| Roles | 🟢 | 1/1 | role.rs (with permissions module) |
+| Custom Fields | ⬜ | 0/10+ | |
+| Journals | ⬜ | 0/3 | |
+| Attachments | ⬜ | 0/3 | |
+| Notifications | ⬜ | 0/3 | |
+| Queries | ⬜ | 0/3 | |
+| Time/Costs | ⬜ | 0/6 | |
+| Wiki/Docs | ⬜ | 0/5 | |
+| Meetings | ⬜ | 0/4 | |
+| OAuth | ⬜ | 0/4 | |
+| Other | ⬜ | 0/20+ | |
 
 ### Database (op-db)
 | Item | Status | Notes |
@@ -55,16 +60,17 @@ Last Updated: 2026-01-30
 | Repositories | ⬜ | |
 | Query builders | ⬜ | |
 
-## Phase 3: Business Logic ⬜
+## Phase 3: Business Logic 🟡
 
 ### Contracts (op-contracts)
-| Domain | Status | Count |
-|--------|--------|-------|
-| Work Packages | ⬜ | 0/4 |
-| Users | ⬜ | 0/4 |
-| Projects | ⬜ | 0/4 |
-| Members | ⬜ | 0/4 |
-| Others | ⬜ | 0/30+ |
+| Domain | Status | Count | Files |
+|--------|--------|-------|-------|
+| Base | 🟢 | 1/1 | base.rs (Contract trait, ChangeTracker) |
+| Work Packages | 🟢 | 4/4 | work_packages/*.rs |
+| Users | ⬜ | 0/4 | |
+| Projects | ⬜ | 0/4 | |
+| Members | ⬜ | 0/4 | |
+| Others | ⬜ | 0/30+ | |
 
 ### Services (op-services)
 | Domain | Status | Count |
@@ -75,20 +81,22 @@ Last Updated: 2026-01-30
 | Notifications | ⬜ | 0/4 |
 | Others | ⬜ | 0/70+ |
 
-## Phase 4: API Layer ⬜
+## Phase 4: API Layer 🟡
 
 ### Endpoints (op-api)
-| Resource | Status | Count |
-|----------|--------|-------|
-| Work Packages | ⬜ | 0/12 |
-| Projects | ⬜ | 0/12 |
-| Users | ⬜ | 0/8 |
-| Memberships | ⬜ | 0/6 |
-| Others | ⬜ | 0/100+ |
+| Resource | Status | Count | Routes |
+|----------|--------|-------|--------|
+| Root | 🟢 | 1/1 | GET /api/v3 |
+| Work Packages | 🟡 | 4/12 | GET, POST /, GET, DELETE /:id |
+| Projects | 🟡 | 4/12 | GET, POST /, GET, DELETE /:id |
+| Users | ⬜ | 0/8 | |
+| Memberships | ⬜ | 0/6 | |
+| Others | ⬜ | 0/100+ | |
 
 ### Authentication (op-auth)
 | Method | Status | Notes |
 |--------|--------|-------|
+| CurrentUser | 🟢 | Permission checking, project/global scopes |
 | Basic Auth | ⬜ | API key |
 | OAuth 2.0 | ⬜ | Bearer tokens |
 | Session | ⬜ | Cookies |
@@ -97,11 +105,20 @@ Last Updated: 2026-01-30
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Server assembly | ⬜ | |
+| Server assembly | 🟡 | op-server binary scaffolded |
 | CLI tools | ⬜ | |
 | Docker build | ⬜ | |
-| Test suite | ⬜ | |
-| Documentation | ⬜ | |
+| Test suite | 🟡 | 34 tests passing |
+| Documentation | 🟡 | INVENTORY.md, tracker/ |
+
+## Test Results
+
+```
+Running 34 tests
+- op_auth: 5 passed
+- op_contracts: 13 passed
+- op_models: 16 passed
+```
 
 ## Blockers & Risks
 
@@ -112,12 +129,21 @@ Last Updated: 2026-01-30
 
 ## Next Steps
 
-1. Complete op-core crate
-2. Define all model structs
+1. ~~Complete op-core crate~~ ✅
+2. Define remaining model structs (Queries, Journals, CustomFields)
 3. Setup database layer with SQLx
-4. Port contracts one by one
+4. Port remaining contracts (Projects, Users, Members)
 5. Port services one by one
-6. Implement API endpoints
+6. Implement remaining API endpoints
+
+## Recent Changes
+
+- Added Project model with DTOs
+- Added Status, Type, Priority models
+- Added Version, Member, Role models
+- Implemented WorkPackage contracts (Base, Create, Update, Delete)
+- Added permissions module with 40+ permission constants
+- Added `has_error` and `get` methods to ValidationErrors
 
 ## Resources
 
