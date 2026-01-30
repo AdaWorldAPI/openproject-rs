@@ -24,7 +24,7 @@
 ### Work Packages
 | Ruby Model | Rust Module | Status | Notes |
 |------------|-------------|--------|-------|
-| `WorkPackage` | `op-models::work_package::WorkPackage` | ⬜ | Core model |
+| `WorkPackage` | `op-models::work_package::WorkPackage` | 🟢 | Core model |
 | `Status` | `op-models::status::Status` | ⬜ | |
 | `Type` | `op-models::type_def::Type` | ⬜ | Work package type |
 | `Priority` | `op-models::priority::Priority` | ⬜ | |
@@ -131,9 +131,9 @@
 ## Progress Summary
 
 - Total Models: ~80+
-- Completed: 0
-- In Progress: 1
-- Not Started: 79+
+- Completed: 2 (User, WorkPackage)
+- In Progress: 0
+- Not Started: 78+
 
 ## Notes
 

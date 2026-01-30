@@ -6,14 +6,14 @@ Last Updated: 2026-01-30
 
 | Component | Total | Done | Progress |
 |-----------|-------|------|----------|
-| Core Types | ~20 | 5 | 25% |
-| Models | ~80 | 1 | 1% |
-| Contracts | ~50 | 0 | 0% |
+| Core Types | ~20 | 10 | 50% |
+| Models | ~80 | 2 | 2.5% |
+| Contracts | ~50 | 1 | 2% |
 | Services | ~100 | 0 | 0% |
-| API Endpoints | ~150 | 0 | 0% |
+| API Endpoints | ~150 | 4 | 2.5% |
 | Representers | ~30 | 0 | 0% |
 | Database | ~100 tables | 0 | 0% |
-| **Overall** | **~430** | **6** | **1%** |
+| **Overall** | **~530** | **17** | **~3%** |
 
 ## Phase 1: Core Foundation (op-core) 🟡
 
