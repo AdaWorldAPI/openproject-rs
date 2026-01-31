@@ -8,6 +8,7 @@ members = [
     "crates/op-api",
     "crates/op-db",
     "crates/op-auth",
+    "crates/op-journals",
     "crates/op-notifications",
     "crates/op-attachments",
     "crates/op-work-packages",

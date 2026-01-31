@@ -27,12 +27,14 @@ pub mod repository;
 pub mod work_packages;
 pub mod users;
 pub mod projects;
+pub mod query_executor;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
 pub use repository::{
     Pagination, PaginatedResult, Repository, RepositoryContext, RepositoryError, RepositoryResult,
 };
-pub use work_packages::{CreateWorkPackageDto, UpdateWorkPackageDto, WorkPackageRepository, WorkPackageRow};
+pub use work_packages::{CreateWorkPackageDto, UpdateWorkPackageDto, WorkPackageRepository};
 pub use users::{CreateUserDto, UpdateUserDto, UserRepository, UserRow};
 pub use projects::{CreateProjectDto, UpdateProjectDto, ProjectRepository, ProjectRow};
+pub use query_executor::{WorkPackageQueryExecutor, WorkPackageRow};

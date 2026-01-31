@@ -1,18 +1,18 @@
 [package]
-name = "op-db"
+name = "op-journals"
 version.workspace = true
 edition.workspace = true
-description = "Database layer for OpenProject RS"
+description = "Journal/audit logging for OpenProject RS"
 
 [dependencies]
 op-core = { path = "../op-core" }
 op-models = { path = "../op-models" }
-op-queries = { path = "../op-queries" }
 
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 async-trait.workspace = true
-serde.workspace = true
-chrono.workspace = true
 tracing.workspace = true
 thiserror.workspace = true

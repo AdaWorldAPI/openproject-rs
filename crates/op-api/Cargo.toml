@@ -9,8 +9,11 @@ op-core = { path = "../op-core" }
 op-models = { path = "../op-models" }
 op-services = { path = "../op-services" }
 op-auth = { path = "../op-auth" }
+op-queries = { path = "../op-queries" }
 
 axum.workspace = true
+md5 = "0.7"
+chrono.workspace = true
 tower.workspace = true
 tower-http.workspace = true
 tokio.workspace = true

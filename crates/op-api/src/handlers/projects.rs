@@ -64,6 +64,24 @@ pub async fn create_project(
     ))
 }
 
+/// PATCH /api/v3/projects/:id
+pub async fn update_project(
+    State(_state): State<AppState>,
+    _user: AuthenticatedUser,
+    Path(id): Path<Id>,
+    Json(dto): Json<UpdateProjectDto>,
+) -> ApiResult<impl IntoResponse> {
+    // Mock - would fetch and update in database
+    Ok(HalResponse(ProjectResponse {
+        type_name: "Project".into(),
+        id,
+        name: dto.name.unwrap_or_else(|| "Updated Project".into()),
+        identifier: dto.identifier.unwrap_or_else(|| "updated".into()),
+        public: dto.public.unwrap_or(false),
+        active: dto.active.unwrap_or(true),
+    }))
+}
+
 /// DELETE /api/v3/projects/:id
 pub async fn delete_project(
     State(_state): State<AppState>,
@@ -106,4 +124,14 @@ pub struct CreateProjectDto {
     pub identifier: Option<String>,
     #[serde(default)]
     pub public: bool,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateProjectDto {
+    pub name: Option<String>,
+    pub identifier: Option<String>,
+    pub public: Option<bool>,
+    pub active: Option<bool>,
+    pub description: Option<String>,
 }
