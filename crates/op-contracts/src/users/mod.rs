@@ -11,10 +11,10 @@ mod create;
 mod update;
 mod delete;
 
-pub use base::UserBaseContract;
-pub use create::CreateUserContract;
+pub use base::{UserBaseContract, UserData};
+pub use create::{CreateUserContract, CreateUserData};
 pub use update::UpdateUserContract;
-pub use delete::DeleteUserContract;
+pub use delete::{DeleteUserContract, DeleteUserData};
 
 /// Permissions required for user operations
 pub mod permissions {

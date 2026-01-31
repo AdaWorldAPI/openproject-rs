@@ -11,10 +11,10 @@ mod create;
 mod update;
 mod delete;
 
-pub use base::ProjectBaseContract;
+pub use base::{ProjectBaseContract, ProjectData};
 pub use create::CreateProjectContract;
 pub use update::UpdateProjectContract;
-pub use delete::DeleteProjectContract;
+pub use delete::{DeleteProjectContract, DeleteProjectData};
 
 /// Permissions required for project operations
 pub mod permissions {

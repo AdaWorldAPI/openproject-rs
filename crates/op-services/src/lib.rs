@@ -33,6 +33,8 @@
 pub mod result;
 pub mod base;
 pub mod work_packages;
+pub mod projects;
+pub mod users;
 
 // Re-exports
 pub use result::ServiceResult;
