@@ -4,6 +4,14 @@
 
 pub mod work_packages;
 pub mod projects;
+pub mod users;
+pub mod statuses;
+pub mod types;
+pub mod priorities;
 
 pub use work_packages::*;
 pub use projects::*;
+pub use users::*;
+pub use statuses::*;
+pub use types::*;
+pub use priorities::*;

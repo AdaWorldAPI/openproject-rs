@@ -12,3 +12,4 @@ serde.workspace = true
 chrono.workspace = true
 validator.workspace = true
 async-trait.workspace = true
+regex.workspace = true
