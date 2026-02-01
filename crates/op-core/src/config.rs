@@ -287,3 +287,149 @@ impl Settings {
         self.values.insert(key.into(), value);
     }
 }
+
+/// Configuration error
+#[derive(Debug, thiserror::Error)]
+pub enum ConfigError {
+    #[error("Environment variable not set: {0}")]
+    MissingEnvVar(String),
+    #[error("Invalid value for {key}: {message}")]
+    InvalidValue { key: String, message: String },
+    #[error("Config file error: {0}")]
+    FileError(String),
+}
+
+impl AppConfig {
+    /// Load configuration from environment variables
+    pub fn from_env() -> Result<Self, ConfigError> {
+        let mut config = Self::default();
+
+        // Database
+        if let Ok(url) = std::env::var("DATABASE_URL") {
+            config.database.url = url;
+        }
+        if let Ok(size) = std::env::var("DATABASE_POOL_SIZE") {
+            config.database.pool_size = size.parse().unwrap_or(10);
+        }
+
+        // Server
+        if let Ok(host) = std::env::var("HOST") {
+            config.server.host = host;
+        }
+        if let Ok(port) = std::env::var("PORT") {
+            config.server.port = port.parse().unwrap_or(8080);
+        }
+        if let Ok(root) = std::env::var("RAILS_RELATIVE_URL_ROOT") {
+            config.server.rails_relative_url_root = Some(root);
+        }
+
+        // Auth
+        if let Ok(secret) = std::env::var("SECRET_KEY_BASE") {
+            config.auth.jwt_secret = secret;
+        } else if let Ok(secret) = std::env::var("JWT_SECRET") {
+            config.auth.jwt_secret = secret;
+        }
+
+        // Storage
+        if let Ok(path) = std::env::var("OPENPROJECT_ATTACHMENTS_STORAGE_PATH") {
+            config.storage.local_path = path;
+        }
+
+        // S3 storage
+        if let Ok(bucket) = std::env::var("S3_BUCKET") {
+            config.storage.s3 = Some(S3Config {
+                bucket,
+                region: std::env::var("S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
+                access_key_id: std::env::var("S3_ACCESS_KEY_ID").unwrap_or_default(),
+                secret_access_key: std::env::var("S3_SECRET_ACCESS_KEY").unwrap_or_default(),
+                endpoint: std::env::var("S3_ENDPOINT").ok(),
+                path_style: std::env::var("S3_PATH_STYLE")
+                    .map(|v| v == "true" || v == "1")
+                    .unwrap_or(false),
+            });
+        }
+
+        // Email
+        if let Ok(host) = std::env::var("SMTP_HOST") {
+            config.email.smtp = Some(SmtpConfig {
+                host,
+                port: std::env::var("SMTP_PORT")
+                    .ok()
+                    .and_then(|p| p.parse().ok())
+                    .unwrap_or(587),
+                username: std::env::var("SMTP_USERNAME").ok(),
+                password: std::env::var("SMTP_PASSWORD").ok(),
+                authentication: std::env::var("SMTP_AUTH").ok(),
+                enable_starttls: std::env::var("SMTP_STARTTLS")
+                    .map(|v| v == "true" || v == "1")
+                    .unwrap_or(true),
+                ssl: std::env::var("SMTP_SSL")
+                    .map(|v| v == "true" || v == "1")
+                    .unwrap_or(false),
+            });
+        }
+        if let Ok(from) = std::env::var("SMTP_FROM") {
+            config.email.from_address = from;
+        }
+
+        // Instance
+        if let Ok(title) = std::env::var("OPENPROJECT_APP_TITLE") {
+            config.instance.app_title = title;
+        }
+        if let Ok(locale) = std::env::var("OPENPROJECT_DEFAULT_LOCALE") {
+            config.instance.default_locale = locale;
+        }
+        if let Ok(tz) = std::env::var("TZ") {
+            config.instance.timezone = tz;
+        }
+
+        // Features
+        config.features.api_v3_enabled = true;
+        if std::env::var("OPENPROJECT_ENABLE_WEBHOOKS").map(|v| v == "true").unwrap_or(false) {
+            config.features.webhooks_enabled = true;
+        }
+        if std::env::var("OPENPROJECT_2FA_ENABLED").map(|v| v == "true").unwrap_or(false) {
+            config.features.two_factor_auth = true;
+        }
+
+        Ok(config)
+    }
+
+    /// Get the server address
+    pub fn server_addr(&self) -> std::net::SocketAddr {
+        use std::net::SocketAddr;
+        let ip: std::net::IpAddr = self.server.host.parse().unwrap_or([0, 0, 0, 0].into());
+        SocketAddr::new(ip, self.server.port)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_default_config() {
+        let config = AppConfig::default();
+        assert_eq!(config.server.port, 8080);
+        assert_eq!(config.database.pool_size, 10);
+    }
+
+    #[test]
+    fn test_settings() {
+        let mut settings = Settings::default();
+        settings.set("key1", SettingValue::String("value1".to_string()));
+        settings.set("key2", SettingValue::Boolean(true));
+        settings.set("key3", SettingValue::Integer(42));
+
+        assert_eq!(settings.get_string("key1"), Some("value1"));
+        assert_eq!(settings.get_bool("key2"), Some(true));
+        assert_eq!(settings.get_int("key3"), Some(42));
+    }
+
+    #[test]
+    fn test_server_addr() {
+        let config = AppConfig::default();
+        let addr = config.server_addr();
+        assert_eq!(addr.port(), 8080);
+    }
+}
