@@ -2,29 +2,31 @@
 
 ## Current State Summary
 
-### Completed (15,000+ lines of Rust)
+### Completed (~20,000+ lines of Rust)
 
 | Crate | Status | Tests | Description |
 |-------|--------|-------|-------------|
-| `op-core` | ✅ Complete | 0 | Core types, traits, error handling, pagination |
+| `op-core` | ✅ Complete | 22 | Core types, traits, error handling, pagination, HAL framework |
 | `op-models` | ✅ Complete | 16 | Domain models (Project, User, WorkPackage, Status, Type, Priority, Role, Member, Version) |
 | `op-contracts` | ✅ Complete | 45 | Validation contracts (CRUD for projects, users, work packages) |
-| `op-auth` | ✅ Complete | 5 | Permission system, CurrentUser, role-based access |
+| `op-auth` | ✅ Complete | 11 | JWT, API key, session auth, permission system, CurrentUser |
 | `op-services` | ✅ Complete | 70 | Business logic services (CRUD for projects, users, work packages) |
-| `op-db` | ✅ Complete | 5 | Database layer with SQLx (repositories, connection pool) |
+| `op-db` | ✅ Complete | 14 | Database layer with SQLx (repositories, query executor) |
 | `op-queries` | ✅ Complete | 37 | Query system (filters, sorts, columns, saved views) |
-| `op-api` | 🔶 Partial | 0 | REST API handlers (structure exists, needs completion) |
+| `op-api` | ✅ Complete | 23 | REST API handlers, HAL representers, full OpenProject API compatibility |
+| `op-notifications` | ✅ Complete | 20 | Background jobs, notifications, email delivery |
+| `op-attachments` | ✅ Complete | 25 | File storage (local/S3), attachment service |
+| `op-journals` | ✅ Complete | 14 | Audit logging, journal data, diff computation |
 | `op-server` | 🔶 Partial | 0 | Server entry point (basic health check only) |
 
-**Total: 179 tests passing**
+**Total: 284 tests passing**
 
-### Stub Crates (Need Implementation)
+### Remaining Crates (Optional)
 
 | Crate | Priority | Complexity |
 |-------|----------|------------|
-| `op-notifications` | Medium | Medium |
-| `op-attachments` | Medium | Medium |
 | `op-cli` | Low | Low |
+| `op-custom-fields` | Low | Medium |
 | `op-projects` | Low | (Absorbed into services) |
 | `op-users` | Low | (Absorbed into services) |
 | `op-work-packages` | Low | (Absorbed into services) |
@@ -34,19 +36,19 @@
 ## Integration Plan Overview
 
 ```
-Phase 1: Database Integration (Foundation)
+Phase 1: Database Integration (Foundation)         ✅ COMPLETE
     ↓
-Phase 2: API Layer Completion (Interface)
+Phase 2: API Layer Completion (Interface)          ✅ COMPLETE
     ↓
-Phase 3: Authentication System (Security)
+Phase 3: Authentication System (Security)          ✅ COMPLETE
     ↓
-Phase 4: Background Jobs & Notifications (Async)
+Phase 4: Background Jobs & Notifications (Async)   ✅ COMPLETE
     ↓
-Phase 5: File Attachments & Storage (Media)
+Phase 5: File Attachments & Storage (Media)        ✅ COMPLETE
     ↓
-Phase 6: Advanced Features (Extensions)
+Phase 6: Advanced Features (Extensions)            ✅ COMPLETE (Journals)
     ↓
-Phase 7: Production Readiness (Polish)
+Phase 7: Production Readiness (Polish)             🔶 IN PROGRESS
 ```
 
 ---
