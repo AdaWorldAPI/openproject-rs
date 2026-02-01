@@ -158,7 +158,7 @@ pub struct S3Config {
     pub path_style: bool,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize, Default)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FeatureFlags {
     pub bim_enabled: bool,
     pub git_enabled: bool,
@@ -168,6 +168,41 @@ pub struct FeatureFlags {
     pub api_v3_enabled: bool,
     pub collaborative_editing: bool,
     pub two_factor_auth: bool,
+    // Business features
+    pub boards_enabled: bool,
+    pub budgets_enabled: bool,
+    pub costs_enabled: bool,
+    pub documents_enabled: bool,
+    pub meetings_enabled: bool,
+    pub team_planner_enabled: bool,
+    pub backlogs_enabled: bool,
+    pub reporting_enabled: bool,
+}
+
+impl Default for FeatureFlags {
+    fn default() -> Self {
+        Self {
+            // Core features - enabled by default
+            api_v3_enabled: true,
+            webhooks_enabled: true,
+            oauth_enabled: true,
+            // Business features - enabled by default
+            boards_enabled: true,
+            budgets_enabled: true,
+            costs_enabled: true,
+            documents_enabled: true,
+            meetings_enabled: true,
+            team_planner_enabled: true,
+            backlogs_enabled: true,
+            reporting_enabled: true,
+            collaborative_editing: true,
+            // Optional features - disabled by default
+            bim_enabled: false,
+            git_enabled: false,
+            ldap_enabled: false,
+            two_factor_auth: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -304,8 +339,11 @@ impl AppConfig {
     pub fn from_env() -> Result<Self, ConfigError> {
         let mut config = Self::default();
 
-        // Database
+        // Database - check DATABASE_URL first, then Railway's individual vars
         if let Ok(url) = std::env::var("DATABASE_URL") {
+            config.database.url = url;
+        } else if let Some(url) = Self::database_url_from_railway() {
+            // Railway provides PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
             config.database.url = url;
         }
         if let Ok(size) = std::env::var("DATABASE_POOL_SIZE") {
@@ -383,16 +421,57 @@ impl AppConfig {
             config.instance.timezone = tz;
         }
 
-        // Features
-        config.features.api_v3_enabled = true;
-        if std::env::var("OPENPROJECT_ENABLE_WEBHOOKS").map(|v| v == "true").unwrap_or(false) {
-            config.features.webhooks_enabled = true;
+        // Features - all business features enabled by default
+        // Can be disabled via environment variables
+        let parse_bool = |v: String| v == "true" || v == "1" || v == "yes";
+
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_BIM_ENABLED") {
+            config.features.bim_enabled = parse_bool(v);
         }
-        if std::env::var("OPENPROJECT_2FA_ENABLED").map(|v| v == "true").unwrap_or(false) {
-            config.features.two_factor_auth = true;
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_GIT_ENABLED") {
+            config.features.git_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_LDAP_ENABLED") {
+            config.features.ldap_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_2FA_ENABLED") {
+            config.features.two_factor_auth = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_BOARDS_ENABLED") {
+            config.features.boards_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_BUDGETS_ENABLED") {
+            config.features.budgets_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_COSTS_ENABLED") {
+            config.features.costs_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_MEETINGS_ENABLED") {
+            config.features.meetings_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_TEAM_PLANNER_ENABLED") {
+            config.features.team_planner_enabled = parse_bool(v);
+        }
+        if let Ok(v) = std::env::var("OPENPROJECT_FEATURE_BACKLOGS_ENABLED") {
+            config.features.backlogs_enabled = parse_bool(v);
         }
 
         Ok(config)
+    }
+
+    /// Build DATABASE_URL from Railway's individual PostgreSQL variables
+    /// Railway provides: PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+    pub fn database_url_from_railway() -> Option<String> {
+        let host = std::env::var("PGHOST").ok()?;
+        let port = std::env::var("PGPORT").unwrap_or_else(|_| "5432".to_string());
+        let user = std::env::var("PGUSER").ok()?;
+        let password = std::env::var("PGPASSWORD").ok()?;
+        let database = std::env::var("PGDATABASE").ok()?;
+
+        Some(format!(
+            "postgres://{}:{}@{}:{}/{}",
+            user, password, host, port, database
+        ))
     }
 
     /// Get the server address

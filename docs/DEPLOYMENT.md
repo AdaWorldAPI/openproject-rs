@@ -109,47 +109,147 @@ docker-compose down -v
 
 ## Railway Deployment
 
+### First-Time Setup
+
+OpenProject RS is designed for **zero-migration deployment**. Unlike the original Ruby OpenProject:
+
+- **No migrations needed** - The Rust implementation works with any existing OpenProject PostgreSQL database
+- **No seeding required** - If deploying fresh, just connect to an empty database
+- **Stateless design** - The server can start immediately once DATABASE_URL is configured
+
+### Via Railway Dashboard (Recommended)
+
+1. Go to [railway.app](https://railway.app)
+2. Click **"New Project"**
+3. Select **"Deploy from GitHub repo"**
+4. Choose `AdaWorldAPI/openproject-rs`
+5. Railway auto-detects the Dockerfile
+
+#### Add PostgreSQL Database
+
+6. Click **"+ New"** → **"Database"** → **"PostgreSQL"**
+7. Railway automatically provisions PostgreSQL and provides connection variables
+
+#### Configure Environment Variables
+
+8. Click on the OpenProject RS service
+9. Go to **"Variables"** tab
+10. Railway automatically provides PostgreSQL variables:
+    - `PGHOST` - Database host
+    - `PGPORT` - Database port (5432)
+    - `PGUSER` - Database user
+    - `PGPASSWORD` - Database password
+    - `PGDATABASE` - Database name
+    - `DATABASE_URL` - Full connection string (auto-generated)
+
+11. Add required variables:
+    ```
+    SECRET_KEY_BASE=<generate with: openssl rand -hex 64>
+    RUST_LOG=info
+    ```
+
+12. Click **"Deploy"**
+
 ### Via Railway CLI
 
 ```bash
 # Install Railway CLI
 npm install -g @railway/cli
 
-# Login
+# Login to Railway
 railway login
 
-# Initialize project
+# Initialize project in your local repo
 cd openproject-rs
 railway init
 
 # Add PostgreSQL database
 railway add --database postgres
 
-# Set environment variables
+# Set required environment variables
 railway variables set SECRET_KEY_BASE="$(openssl rand -hex 64)"
+railway variables set RUST_LOG="info"
 
 # Deploy
 railway up
+
+# View logs
+railway logs
 ```
 
-### Via Railway Dashboard
+### Railway PostgreSQL Variables
 
-1. Go to [railway.app](https://railway.app)
-2. Click "New Project"
-3. Select "Deploy from GitHub repo"
-4. Choose `AdaWorldAPI/openproject-rs`
-5. Railway auto-detects Dockerfile
-6. Add PostgreSQL database from "Add Service"
-7. Set environment variables in "Variables" tab
-8. Deploy
+Railway provides PostgreSQL connection info in two ways:
 
-### Railway Environment Variables
-
-Railway automatically provides `DATABASE_URL` when you add a PostgreSQL service. You need to add:
-
+**Option 1: DATABASE_URL (auto-generated)**
 ```
-SECRET_KEY_BASE=<your-64-char-secret>
-RUST_LOG=info
+DATABASE_URL=postgres://user:pass@host:port/database
+```
+
+**Option 2: Individual variables (also auto-provided)**
+```
+PGHOST=containers-us-west-xxx.railway.app
+PGPORT=5432
+PGUSER=postgres
+PGPASSWORD=xxxxx
+PGDATABASE=railway
+```
+
+OpenProject RS automatically detects and uses either format.
+
+### Railway Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes* | - | PostgreSQL URL (auto-provided by Railway) |
+| `PGHOST` | Yes* | - | PostgreSQL host (alternative to DATABASE_URL) |
+| `PGPORT` | No | 5432 | PostgreSQL port |
+| `PGUSER` | Yes* | - | PostgreSQL user |
+| `PGPASSWORD` | Yes* | - | PostgreSQL password |
+| `PGDATABASE` | Yes* | - | PostgreSQL database name |
+| `SECRET_KEY_BASE` | **Yes** | - | JWT signing key (64+ chars) |
+| `PORT` | No | 8080 | Server port (Railway sets this) |
+| `RUST_LOG` | No | info | Log level |
+
+*Either `DATABASE_URL` or all `PG*` variables must be set.
+
+### Business Features
+
+All business features are **enabled by default**:
+
+| Feature | Enabled | Env Variable to Disable |
+|---------|---------|------------------------|
+| Boards | ✅ | `OPENPROJECT_FEATURE_BOARDS_ENABLED=false` |
+| Budgets | ✅ | `OPENPROJECT_FEATURE_BUDGETS_ENABLED=false` |
+| Costs | ✅ | `OPENPROJECT_FEATURE_COSTS_ENABLED=false` |
+| Documents | ✅ | `OPENPROJECT_FEATURE_DOCUMENTS_ENABLED=true` |
+| Meetings | ✅ | `OPENPROJECT_FEATURE_MEETINGS_ENABLED=false` |
+| Team Planner | ✅ | `OPENPROJECT_FEATURE_TEAM_PLANNER_ENABLED=false` |
+| Backlogs | ✅ | `OPENPROJECT_FEATURE_BACKLOGS_ENABLED=false` |
+| Reporting | ✅ | `OPENPROJECT_FEATURE_REPORTING_ENABLED=true` |
+| Webhooks | ✅ | (always enabled) |
+| API v3 | ✅ | (always enabled) |
+
+Optional features (disabled by default):
+
+| Feature | Env Variable to Enable |
+|---------|----------------------|
+| BIM | `OPENPROJECT_FEATURE_BIM_ENABLED=true` |
+| Git | `OPENPROJECT_FEATURE_GIT_ENABLED=true` |
+| LDAP | `OPENPROJECT_FEATURE_LDAP_ENABLED=true` |
+| 2FA | `OPENPROJECT_FEATURE_2FA_ENABLED=true` |
+
+### Verify Deployment
+
+```bash
+# Check health
+curl https://your-app.railway.app/health
+
+# Check API
+curl https://your-app.railway.app/api/v3
+
+# Check features
+curl https://your-app.railway.app/api/v3/configuration
 ```
 
 ---
