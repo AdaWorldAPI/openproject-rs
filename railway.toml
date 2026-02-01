@@ -1,0 +1,33 @@
+# Railway deployment configuration for OpenProject RS
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+# Use Dockerfile for building
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+# Number of replicas
+numReplicas = 1
+
+# Health check configuration
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+
+# Restart policy
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5
+
+# Resource limits (adjust based on plan)
+# memory = "512Mi"
+# cpu = "0.5"
+
+[deploy.startCommand]
+# Use the default CMD from Dockerfile
+
+[env]
+# Default environment variables
+# These can be overridden in Railway dashboard
+HOST = "0.0.0.0"
+PORT = { default = "8080", isPublic = true }
+RUST_LOG = "info,op_server=debug"

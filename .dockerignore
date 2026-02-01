@@ -1,0 +1,49 @@
+# Rust build artifacts
+target/
+debug/
+*.pdb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Tests and benchmarks (not needed in container)
+benches/
+tests/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.log
+
+# Docker (don't include Docker files in build context)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Railway
+railway.toml
+
+# Misc
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,105 @@
+# OpenProject RS - Docker Compose for local development and testing
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # PostgreSQL Database
+  # ==========================================================================
+  db:
+    image: postgres:17-alpine
+    container_name: openproject-rs-db
+    environment:
+      POSTGRES_USER: openproject
+      POSTGRES_PASSWORD: openproject
+      POSTGRES_DB: openproject
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openproject"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - openproject-rs
+
+  # ==========================================================================
+  # OpenProject RS Server
+  # ==========================================================================
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: openproject-rs-server
+    environment:
+      # Database
+      DATABASE_URL: postgres://openproject:openproject@db:5432/openproject
+      DATABASE_POOL_SIZE: "10"
+
+      # Server
+      HOST: "0.0.0.0"
+      PORT: "8080"
+
+      # Auth
+      SECRET_KEY_BASE: "development-secret-key-change-in-production-minimum-64-chars-long"
+
+      # Logging
+      RUST_LOG: "info,op_server=debug,op_api=debug"
+
+      # Storage
+      OPENPROJECT_ATTACHMENTS_STORAGE_PATH: /var/openproject/assets
+
+      # Instance
+      OPENPROJECT_APP_TITLE: "OpenProject RS"
+      TZ: "UTC"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - attachments:/var/openproject/assets
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 3
+    networks:
+      - openproject-rs
+
+  # ==========================================================================
+  # Redis (optional - for caching/sessions)
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: openproject-rs-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - openproject-rs
+    profiles:
+      - with-redis
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  openproject-rs:
+    driver: bridge
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  postgres_data:
+  attachments:
+  redis_data:
