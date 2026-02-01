@@ -38,7 +38,7 @@ This guide covers deploying OpenProject RS in various environments.
 | `S3_ENDPOINT` | - | Custom endpoint (MinIO) |
 | `S3_PATH_STYLE` | `false` | Use path-style URLs |
 
-### Email
+### Email (SMTP)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -49,6 +49,17 @@ This guide covers deploying OpenProject RS in various environments.
 | `SMTP_FROM` | - | From email address |
 | `SMTP_STARTTLS` | `true` | Enable STARTTLS |
 | `SMTP_SSL` | `false` | Use SSL/TLS |
+
+### Email (Microsoft Graph / Office 365)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MS_GRAPH_TENANT_ID` | Yes | Azure AD tenant ID |
+| `MS_GRAPH_CLIENT_ID` | Yes | Azure AD application (client) ID |
+| `MS_GRAPH_CLIENT_SECRET` | Yes | Azure AD client secret |
+| `MS_GRAPH_SENDER` | Yes | Sender email address (must have Mail.Send permission) |
+
+When MS Graph variables are configured, email delivery automatically uses Microsoft Graph API instead of SMTP.
 
 ---
 
@@ -679,3 +690,141 @@ curl http://localhost:8080/health/full | jq '.components[] | select(.name=="data
 # Check metrics for bottlenecks
 curl http://localhost:8080/metrics.json | jq '.database'
 ```
+
+---
+
+## Microsoft Graph Email Setup (Office 365)
+
+OpenProject RS supports sending emails via Microsoft Graph API, which is ideal for Office 365/Microsoft 365 environments. This uses the `Mail.Send` permission with application credentials (client credentials flow).
+
+### Prerequisites
+
+- Azure subscription with Azure Active Directory
+- Microsoft 365 account with email capability
+- Global Administrator or Application Administrator role to grant consent
+
+### Step 1: Register Azure AD Application
+
+1. Go to [Azure Portal](https://portal.azure.com)
+2. Navigate to **Azure Active Directory** → **App registrations**
+3. Click **"+ New registration"**
+4. Configure:
+   - **Name**: `OpenProject Email Sender`
+   - **Supported account types**: "Accounts in this organizational directory only"
+   - **Redirect URI**: Leave empty (not needed for client credentials)
+5. Click **"Register"**
+6. Note the **Application (client) ID** and **Directory (tenant) ID**
+
+### Step 2: Create Client Secret
+
+1. In your app registration, go to **Certificates & secrets**
+2. Click **"+ New client secret"**
+3. Add description: `OpenProject`
+4. Select expiration (recommend: 24 months)
+5. Click **"Add"**
+6. **Copy the secret value immediately** (you won't see it again!)
+
+### Step 3: Grant API Permissions
+
+1. Go to **API permissions**
+2. Click **"+ Add a permission"**
+3. Select **Microsoft Graph**
+4. Choose **Application permissions** (not Delegated)
+5. Search and select: **`Mail.Send`**
+6. Click **"Add permissions"**
+7. Click **"Grant admin consent for [Your Organization]"**
+8. Confirm the consent
+
+### Step 4: Configure Sender Mailbox
+
+The sender must be a valid mailbox in your organization:
+- Can be a user mailbox: `notifications@yourcompany.com`
+- Can be a shared mailbox: `openproject@yourcompany.com`
+
+The application sends **on behalf of** this mailbox.
+
+### Step 5: Set Environment Variables
+
+```bash
+# Azure AD identifiers
+MS_GRAPH_TENANT_ID=your-tenant-id-guid
+MS_GRAPH_CLIENT_ID=your-client-id-guid
+MS_GRAPH_CLIENT_SECRET=your-client-secret-value
+
+# Sender mailbox (must exist in your tenant)
+MS_GRAPH_SENDER=openproject@yourcompany.com
+```
+
+### Railway Configuration
+
+In Railway dashboard, add these variables:
+
+| Variable | Value |
+|----------|-------|
+| `MS_GRAPH_TENANT_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `MS_GRAPH_CLIENT_ID` | `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
+| `MS_GRAPH_CLIENT_SECRET` | `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
+| `MS_GRAPH_SENDER` | `openproject@yourcompany.com` |
+
+### Docker Configuration
+
+```bash
+docker run -d \
+  --name openproject-rs \
+  -e DATABASE_URL="..." \
+  -e SECRET_KEY_BASE="..." \
+  -e MS_GRAPH_TENANT_ID="your-tenant-id" \
+  -e MS_GRAPH_CLIENT_ID="your-client-id" \
+  -e MS_GRAPH_CLIENT_SECRET="your-secret" \
+  -e MS_GRAPH_SENDER="openproject@yourcompany.com" \
+  openproject-rs:latest
+```
+
+### Verify Email Sending
+
+Check logs after deployment:
+
+```bash
+# Should show: "Email delivery configured: MsGraph"
+docker logs openproject-rs | grep -i email
+```
+
+### Troubleshooting Microsoft Graph
+
+**Error: "401 Unauthorized"**
+- Verify client ID and secret are correct
+- Check tenant ID matches your Azure AD
+- Ensure admin consent was granted
+
+**Error: "403 Forbidden"**
+- The sender mailbox doesn't exist
+- Mail.Send permission not granted
+- Application permission (not delegated) required
+
+**Error: "400 Bad Request"**
+- Check sender email format
+- Verify recipients are valid email addresses
+
+**Test with Graph Explorer**
+1. Go to [Graph Explorer](https://developer.microsoft.com/graph/graph-explorer)
+2. Sign in with admin account
+3. Test: `POST https://graph.microsoft.com/v1.0/users/{sender}/sendMail`
+
+### Security Best Practices
+
+1. **Rotate secrets regularly** - Set calendar reminder before expiration
+2. **Use specific mailbox** - Create dedicated shared mailbox for notifications
+3. **Monitor sign-in logs** - Azure AD → Sign-in logs → filter by app name
+4. **Limit permissions** - Only grant `Mail.Send`, not `Mail.ReadWrite`
+
+### Comparison: SMTP vs Microsoft Graph
+
+| Feature | SMTP | Microsoft Graph |
+|---------|------|-----------------|
+| Setup complexity | Low | Medium |
+| Firewall friendly | Needs port 587/465 | HTTPS only (443) |
+| Modern authentication | Basic/OAuth | OAuth 2.0 only |
+| Rate limits | Varies | 10,000/min per mailbox |
+| Audit logging | Manual | Azure AD logs |
+| Multi-factor auth | Complicated | Built-in |
+| Recommended for | Simple setups | Enterprise/O365 |

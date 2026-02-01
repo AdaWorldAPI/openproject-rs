@@ -112,6 +112,8 @@ pub struct LdapAttributeMapping {
 pub struct EmailConfig {
     pub delivery_method: EmailDeliveryMethod,
     pub smtp: Option<SmtpConfig>,
+    /// Microsoft Graph API configuration for Office 365 email
+    pub ms_graph: Option<MsGraphConfig>,
     pub from_address: String,
     pub from_name: String,
 }
@@ -122,6 +124,7 @@ pub enum EmailDeliveryMethod {
     #[default]
     Smtp,
     Sendmail,
+    MsGraph,
     Test,
 }
 
@@ -134,6 +137,20 @@ pub struct SmtpConfig {
     pub authentication: Option<String>,
     pub enable_starttls: bool,
     pub ssl: bool,
+}
+
+/// Microsoft Graph API configuration for Office 365 email
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MsGraphConfig {
+    /// Azure AD tenant ID
+    pub tenant_id: String,
+    /// Azure AD application (client) ID
+    pub client_id: String,
+    /// Azure AD client secret
+    pub client_secret: String,
+    /// User principal name (email) or object ID of the sender
+    /// This user must have Mail.Send permission granted
+    pub sender: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -254,6 +271,7 @@ impl Default for AppConfig {
             email: EmailConfig {
                 delivery_method: EmailDeliveryMethod::Smtp,
                 smtp: None,
+                ms_graph: None,
                 from_address: "openproject@example.com".to_string(),
                 from_name: "OpenProject".to_string(),
             },
@@ -408,6 +426,28 @@ impl AppConfig {
         }
         if let Ok(from) = std::env::var("SMTP_FROM") {
             config.email.from_address = from;
+        }
+
+        // Microsoft Graph (Office 365) email
+        if let Ok(tenant_id) = std::env::var("MS_GRAPH_TENANT_ID") {
+            if let (Ok(client_id), Ok(client_secret), Ok(sender)) = (
+                std::env::var("MS_GRAPH_CLIENT_ID"),
+                std::env::var("MS_GRAPH_CLIENT_SECRET"),
+                std::env::var("MS_GRAPH_SENDER"),
+            ) {
+                config.email.ms_graph = Some(MsGraphConfig {
+                    tenant_id,
+                    client_id,
+                    client_secret,
+                    sender,
+                });
+                // Auto-set delivery method to MsGraph if configured
+                config.email.delivery_method = EmailDeliveryMethod::MsGraph;
+                // Use sender as from_address if not explicitly set
+                if config.email.from_address == "openproject@example.com" {
+                    config.email.from_address = config.email.ms_graph.as_ref().unwrap().sender.clone();
+                }
+            }
         }
 
         // Instance

@@ -395,6 +395,245 @@ impl DigestBuilder {
     }
 }
 
+/// Microsoft Graph email sender configuration
+#[derive(Debug, Clone)]
+pub struct MsGraphConfig {
+    /// Azure AD tenant ID
+    pub tenant_id: String,
+    /// Azure AD application (client) ID
+    pub client_id: String,
+    /// Azure AD client secret
+    pub client_secret: String,
+    /// User principal name or object ID of the sender
+    /// (e.g., noreply@yourdomain.com or user object ID)
+    pub sender: String,
+}
+
+impl MsGraphConfig {
+    /// Load configuration from environment variables
+    pub fn from_env() -> Option<Self> {
+        Some(Self {
+            tenant_id: std::env::var("MS_GRAPH_TENANT_ID").ok()?,
+            client_id: std::env::var("MS_GRAPH_CLIENT_ID").ok()?,
+            client_secret: std::env::var("MS_GRAPH_CLIENT_SECRET").ok()?,
+            sender: std::env::var("MS_GRAPH_SENDER").ok()?,
+        })
+    }
+}
+
+/// Microsoft Graph email sender
+///
+/// Uses Azure AD app registration with Mail.Send permission to send emails
+/// via the Microsoft Graph API.
+///
+/// Required Azure AD app permissions (Application type):
+/// - Microsoft Graph > Mail.Send
+///
+/// Environment variables:
+/// - MS_GRAPH_TENANT_ID: Azure AD tenant ID
+/// - MS_GRAPH_CLIENT_ID: Application (client) ID
+/// - MS_GRAPH_CLIENT_SECRET: Client secret value
+/// - MS_GRAPH_SENDER: Sender email (e.g., noreply@yourdomain.com)
+pub struct MsGraphEmailSender {
+    config: MsGraphConfig,
+    // In production, this would use reqwest or similar HTTP client
+    // and cache the OAuth token
+}
+
+impl MsGraphEmailSender {
+    pub fn new(config: MsGraphConfig) -> Self {
+        tracing::info!(
+            sender = %config.sender,
+            tenant = %config.tenant_id,
+            "Microsoft Graph email sender initialized"
+        );
+        Self { config }
+    }
+
+    /// Create from environment variables
+    pub fn from_env() -> Option<Self> {
+        MsGraphConfig::from_env().map(Self::new)
+    }
+
+    /// Get OAuth2 access token from Azure AD
+    async fn get_access_token(&self) -> EmailResult<String> {
+        // Token endpoint
+        let token_url = format!(
+            "https://login.microsoftonline.com/{}/oauth2/v2.0/token",
+            self.config.tenant_id
+        );
+
+        // In a real implementation, this would:
+        // 1. POST to token_url with:
+        //    - grant_type=client_credentials
+        //    - client_id={client_id}
+        //    - client_secret={client_secret}
+        //    - scope=https://graph.microsoft.com/.default
+        // 2. Parse the JSON response for access_token
+        // 3. Cache the token until it expires
+
+        tracing::debug!(url = %token_url, "Would fetch OAuth token");
+
+        // Placeholder - in production use reqwest
+        Err(EmailError::SendFailed(
+            "MS Graph requires HTTP client implementation (reqwest)".to_string()
+        ))
+    }
+
+    /// Build the Graph API message payload
+    fn build_message_payload(&self, message: &EmailMessage) -> serde_json::Value {
+        let to_recipients: Vec<serde_json::Value> = message.to.iter().map(|addr| {
+            serde_json::json!({
+                "emailAddress": {
+                    "address": addr.email,
+                    "name": addr.name
+                }
+            })
+        }).collect();
+
+        let cc_recipients: Vec<serde_json::Value> = message.cc.iter().map(|addr| {
+            serde_json::json!({
+                "emailAddress": {
+                    "address": addr.email,
+                    "name": addr.name
+                }
+            })
+        }).collect();
+
+        let bcc_recipients: Vec<serde_json::Value> = message.bcc.iter().map(|addr| {
+            serde_json::json!({
+                "emailAddress": {
+                    "address": addr.email,
+                    "name": addr.name
+                }
+            })
+        }).collect();
+
+        let mut body = serde_json::json!({
+            "message": {
+                "subject": message.subject,
+                "body": {
+                    "contentType": if message.html_body.is_some() { "HTML" } else { "Text" },
+                    "content": message.html_body.as_ref().unwrap_or(&message.text_body)
+                },
+                "toRecipients": to_recipients,
+                "ccRecipients": cc_recipients,
+                "bccRecipients": bcc_recipients
+            },
+            "saveToSentItems": "true"
+        });
+
+        // Add reply-to if specified
+        if let Some(ref reply_to) = message.reply_to {
+            body["message"]["replyTo"] = serde_json::json!([{
+                "emailAddress": {
+                    "address": reply_to.email,
+                    "name": reply_to.name
+                }
+            }]);
+        }
+
+        // Add custom headers
+        if !message.headers.is_empty() {
+            let internet_headers: Vec<serde_json::Value> = message.headers.iter().map(|(name, value)| {
+                serde_json::json!({
+                    "name": name,
+                    "value": value
+                })
+            }).collect();
+            body["message"]["internetMessageHeaders"] = serde_json::json!(internet_headers);
+        }
+
+        body
+    }
+}
+
+#[async_trait]
+impl EmailSender for MsGraphEmailSender {
+    async fn send(&self, message: &EmailMessage) -> EmailResult<String> {
+        tracing::info!(
+            to = ?message.to.first().map(|a| &a.email),
+            subject = %message.subject,
+            "Sending email via Microsoft Graph"
+        );
+
+        // Get access token
+        let _token = self.get_access_token().await?;
+
+        // Build the sendMail endpoint URL
+        let send_url = format!(
+            "https://graph.microsoft.com/v1.0/users/{}/sendMail",
+            self.config.sender
+        );
+
+        // Build message payload
+        let _payload = self.build_message_payload(message);
+
+        tracing::debug!(url = %send_url, "Would POST to Graph API");
+
+        // In a real implementation, this would:
+        // 1. POST to send_url with:
+        //    - Authorization: Bearer {token}
+        //    - Content-Type: application/json
+        //    - Body: payload
+        // 2. Check for 202 Accepted response
+        // 3. Return message ID
+
+        // Placeholder response
+        Err(EmailError::SendFailed(
+            "MS Graph requires HTTP client implementation (reqwest)".to_string()
+        ))
+    }
+
+    fn is_configured(&self) -> bool {
+        !self.config.tenant_id.is_empty()
+            && !self.config.client_id.is_empty()
+            && !self.config.client_secret.is_empty()
+            && !self.config.sender.is_empty()
+    }
+}
+
+/// Memory-based email sender for testing
+pub struct MemoryEmailSender {
+    sent: std::sync::Arc<tokio::sync::RwLock<Vec<EmailMessage>>>,
+}
+
+impl Default for MemoryEmailSender {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MemoryEmailSender {
+    pub fn new() -> Self {
+        Self {
+            sent: std::sync::Arc::new(tokio::sync::RwLock::new(Vec::new())),
+        }
+    }
+
+    /// Get all sent messages
+    pub async fn sent_messages(&self) -> Vec<EmailMessage> {
+        self.sent.read().await.clone()
+    }
+
+    /// Clear sent messages
+    pub async fn clear(&self) {
+        self.sent.write().await.clear();
+    }
+}
+
+#[async_trait]
+impl EmailSender for MemoryEmailSender {
+    async fn send(&self, message: &EmailMessage) -> EmailResult<String> {
+        self.sent.write().await.push(message.clone());
+        Ok(message.id.clone())
+    }
+
+    fn is_configured(&self) -> bool {
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
