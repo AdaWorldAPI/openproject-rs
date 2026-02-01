@@ -209,6 +209,16 @@ impl CurrentUser {
     pub fn is_anonymous(&self) -> bool {
         self.is_anonymous
     }
+
+    /// Get login
+    pub fn login(&self) -> &str {
+        &self.login
+    }
+
+    /// Get email
+    pub fn email(&self) -> &str {
+        &self.email
+    }
 }
 
 // ============================================================================

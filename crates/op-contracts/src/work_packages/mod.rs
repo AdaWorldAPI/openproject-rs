@@ -11,10 +11,10 @@ mod create;
 mod update;
 mod delete;
 
-pub use base::WorkPackageBaseContract;
+pub use base::{WorkPackageBaseContract, WorkPackageData};
 pub use create::CreateWorkPackageContract;
 pub use update::UpdateWorkPackageContract;
-pub use delete::DeleteWorkPackageContract;
+pub use delete::{DeleteWorkPackageContract, DeleteWorkPackageData};
 
 /// Permissions required for work package operations
 pub mod permissions {

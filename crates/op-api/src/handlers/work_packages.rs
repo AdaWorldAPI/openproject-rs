@@ -62,6 +62,22 @@ pub async fn create_work_package(
     ))
 }
 
+/// PATCH /api/v3/work_packages/:id
+pub async fn update_work_package(
+    State(_state): State<AppState>,
+    _user: AuthenticatedUser,
+    Path(id): Path<Id>,
+    Json(dto): Json<UpdateWorkPackageDto>,
+) -> ApiResult<impl IntoResponse> {
+    // Mock - would fetch and update in database
+    Ok(HalResponse(WorkPackageResponse {
+        type_name: "WorkPackage".into(),
+        id,
+        subject: dto.subject.unwrap_or_else(|| "Updated Work Package".into()),
+        lock_version: dto.lock_version + 1,
+    }))
+}
+
 /// DELETE /api/v3/work_packages/:id
 pub async fn delete_work_package(
     State(_state): State<AppState>,
@@ -99,4 +115,13 @@ struct WorkPackageResponse {
 #[serde(rename_all = "camelCase")]
 pub struct CreateWorkPackageDto {
     pub subject: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateWorkPackageDto {
+    pub subject: Option<String>,
+    pub description: Option<String>,
+    #[serde(default)]
+    pub lock_version: i32,
 }
