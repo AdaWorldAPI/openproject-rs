@@ -6,14 +6,16 @@ use axum::{
     http::request::Parts,
 };
 use op_auth::permissions::CurrentUser;
+use sqlx::PgPool;
 use std::sync::Arc;
 
 use crate::error::ApiError;
 
-/// Application state
+/// Application state with database pool
 #[derive(Clone)]
 pub struct AppState {
     pub config: Arc<AppConfig>,
+    pub db: Option<PgPool>,
 }
 
 #[derive(Clone)]
@@ -37,7 +39,15 @@ impl Default for AppState {
     fn default() -> Self {
         Self {
             config: Arc::new(AppConfig::default()),
+            db: None,
         }
+    }
+}
+
+impl AppState {
+    /// Get database pool, returns error if not configured
+    pub fn pool(&self) -> Result<&PgPool, ApiError> {
+        self.db.as_ref().ok_or_else(|| ApiError::internal("Database not configured"))
     }
 }
 

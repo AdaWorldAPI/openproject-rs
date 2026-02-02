@@ -9,6 +9,7 @@ pub mod statuses;
 pub mod types;
 pub mod priorities;
 pub mod queries;
+pub mod time_entries;
 
 pub use work_packages::*;
 pub use projects::*;
@@ -17,3 +18,4 @@ pub use statuses::*;
 pub use types::*;
 pub use priorities::*;
 pub use queries::*;
+pub use time_entries::*;

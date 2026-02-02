@@ -2,12 +2,11 @@
 //!
 //! Production-ready HTTP server for OpenProject Rust implementation.
 
-use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::{
     middleware,
-    routing::{get, post},
+    routing::get,
     Json, Router,
 };
 use tower::ServiceBuilder;
@@ -16,10 +15,11 @@ use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
 };
-use tracing::{info, Level};
+use tracing::info;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use op_core::config::AppConfig;
+use op_db::{Database, DatabaseConfig};
 
 mod health;
 mod metrics;
@@ -46,16 +46,30 @@ async fn main() -> anyhow::Result<()> {
         "Starting OpenProject RS"
     );
 
+    // Connect to database
+    let db_config = DatabaseConfig::with_url(&config.database.url);
+    let db = match Database::connect(&db_config).await {
+        Ok(db) => {
+            info!("Connected to database");
+            Some(db)
+        }
+        Err(e) => {
+            tracing::warn!("Failed to connect to database: {}. Running without database.", e);
+            None
+        }
+    };
+
     // Initialize components
     let metrics = Arc::new(Metrics::new());
-    let health_checker = Arc::new(
-        HealthChecker::new(HealthConfig::default())
-            .with_database(config.database.url.clone()),
-    );
+    let mut health_checker = HealthChecker::new(HealthConfig::default());
+    if let Some(ref db) = db {
+        health_checker = health_checker.with_pool(db.pool().clone());
+    }
 
     let app_state = Arc::new(AppState {
-        health: health_checker,
+        health: Arc::new(health_checker),
         config: config.clone(),
+        db: db.map(|d| d.pool().clone()),
     });
 
     // Build router
@@ -246,6 +260,7 @@ mod tests {
         let state = Arc::new(AppState {
             health: health_checker,
             config,
+            db: None,
         });
 
         build_router(state, metrics)

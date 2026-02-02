@@ -10,8 +10,10 @@ op-models = { path = "../op-models" }
 op-services = { path = "../op-services" }
 op-auth = { path = "../op-auth" }
 op-queries = { path = "../op-queries" }
+op-db = { path = "../op-db" }
 
 axum.workspace = true
+sqlx.workspace = true
 md5 = "0.7"
 chrono.workspace = true
 tower.workspace = true

@@ -9,8 +9,9 @@ use axum::extract::State;
 use axum::http::StatusCode;
 use axum::Json;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 use tokio::sync::RwLock;
-use tracing::{debug, error, info, warn};
+use tracing::debug;
 
 /// Health check status
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -88,8 +89,8 @@ pub struct HealthChecker {
     config: HealthConfig,
     start_time: Instant,
     cache: RwLock<Option<CachedHealth>>,
-    // Components to check
-    database_url: Option<String>,
+    // Database pool for health checks
+    pool: Option<PgPool>,
 }
 
 impl HealthChecker {
@@ -98,12 +99,17 @@ impl HealthChecker {
             config,
             start_time: Instant::now(),
             cache: RwLock::new(None),
-            database_url: None,
+            pool: None,
         }
     }
 
-    pub fn with_database(mut self, url: String) -> Self {
-        self.database_url = Some(url);
+    pub fn with_database(mut self, _url: String) -> Self {
+        // Deprecated - use with_pool instead
+        self
+    }
+
+    pub fn with_pool(mut self, pool: PgPool) -> Self {
+        self.pool = Some(pool);
         self
     }
 
@@ -140,7 +146,7 @@ impl HealthChecker {
         let mut overall_status = HealthStatus::Healthy;
 
         // Check database
-        if let Some(ref _url) = self.database_url {
+        if self.pool.is_some() {
             let db_health = self.check_database().await;
             if db_health.status == HealthStatus::Unhealthy {
                 overall_status = HealthStatus::Unhealthy;
@@ -178,21 +184,40 @@ impl HealthChecker {
     async fn check_database(&self) -> ComponentHealth {
         let start = Instant::now();
 
-        // In a real implementation, we'd execute a simple query
-        // For now, simulate a healthy database
-        let status = HealthStatus::Healthy;
-        let message = Some("Connected".to_string());
+        let Some(pool) = &self.pool else {
+            return ComponentHealth {
+                name: "database".to_string(),
+                status: HealthStatus::Unhealthy,
+                message: Some("No database pool configured".to_string()),
+                response_time_ms: start.elapsed().as_millis() as u64,
+                details: None,
+            };
+        };
 
-        ComponentHealth {
-            name: "database".to_string(),
-            status,
-            message,
-            response_time_ms: start.elapsed().as_millis() as u64,
-            details: Some(serde_json::json!({
-                "type": "postgresql",
-                "pool_size": 10,
-                "active_connections": 2
-            })),
+        // Execute a real health check query
+        match sqlx::query("SELECT 1").execute(pool).await {
+            Ok(_) => {
+                let stats = pool.size();
+                let idle = pool.num_idle();
+                ComponentHealth {
+                    name: "database".to_string(),
+                    status: HealthStatus::Healthy,
+                    message: Some("Connected".to_string()),
+                    response_time_ms: start.elapsed().as_millis() as u64,
+                    details: Some(serde_json::json!({
+                        "type": "postgresql",
+                        "pool_size": stats,
+                        "idle_connections": idle
+                    })),
+                }
+            }
+            Err(e) => ComponentHealth {
+                name: "database".to_string(),
+                status: HealthStatus::Unhealthy,
+                message: Some(format!("Database error: {}", e)),
+                response_time_ms: start.elapsed().as_millis() as u64,
+                details: None,
+            },
         }
     }
 
@@ -238,10 +263,11 @@ impl HealthChecker {
     }
 }
 
-/// Application state containing health checker
+/// Application state containing health checker and database pool
 pub struct AppState {
     pub health: Arc<HealthChecker>,
     pub config: op_core::config::AppConfig,
+    pub db: Option<PgPool>,
 }
 
 /// Simple liveness check (Kubernetes)

@@ -28,6 +28,7 @@ pub mod work_packages;
 pub mod users;
 pub mod projects;
 pub mod query_executor;
+pub mod time_entries;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -38,3 +39,4 @@ pub use work_packages::{CreateWorkPackageDto, UpdateWorkPackageDto, WorkPackageR
 pub use users::{CreateUserDto, UpdateUserDto, UserRepository, UserRow};
 pub use projects::{CreateProjectDto, UpdateProjectDto, ProjectRepository, ProjectRow};
 pub use query_executor::{WorkPackageQueryExecutor, WorkPackageRow};
+pub use time_entries::{CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntryRepository, TimeEntryRow};

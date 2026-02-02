@@ -23,8 +23,8 @@ pub enum ApiError {
 }
 
 impl ApiError {
-    pub fn not_found(resource: &'static str, id: impl Into<String>) -> Self {
-        ApiError::NotFound { resource, id: id.into() }
+    pub fn not_found(resource: &'static str, id: impl std::fmt::Display) -> Self {
+        ApiError::NotFound { resource, id: id.to_string() }
     }
 
     pub fn unauthorized(msg: impl Into<String>) -> Self {
@@ -37,6 +37,14 @@ impl ApiError {
 
     pub fn bad_request(msg: impl Into<String>) -> Self {
         ApiError::BadRequest(msg.into())
+    }
+
+    pub fn conflict(msg: impl Into<String>) -> Self {
+        ApiError::Conflict(msg.into())
+    }
+
+    pub fn internal(msg: impl Into<String>) -> Self {
+        ApiError::Internal(msg.into())
     }
 
     pub fn status_code(&self) -> StatusCode {
