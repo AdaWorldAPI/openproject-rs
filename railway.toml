@@ -22,9 +22,6 @@ restartPolicyMaxRetries = 5
 # memory = "512Mi"
 # cpu = "0.5"
 
-[deploy.startCommand]
-# Use the default CMD from Dockerfile
-
 [env]
 # Default environment variables
 # These can be overridden in Railway dashboard
