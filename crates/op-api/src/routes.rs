@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{priorities, projects, queries, statuses, types, users, work_packages};
+use crate::handlers::{priorities, projects, queries, statuses, time_entries, types, users, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -26,6 +26,7 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/statuses", statuses_router())
         .nest("/types", types_router())
         .nest("/priorities", priorities_router())
+        .nest("/time_entries", time_entries_router())
 }
 
 fn work_packages_router() -> Router<AppState> {
@@ -87,6 +88,15 @@ fn queries_router() -> Router<AppState> {
         .route("/:id", delete(queries::delete_query))
         .route("/:id/star", post(queries::star_query))
         .route("/:id/star", delete(queries::unstar_query))
+}
+
+fn time_entries_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(time_entries::list_time_entries))
+        .route("/", post(time_entries::create_time_entry))
+        .route("/:id", get(time_entries::get_time_entry))
+        .route("/:id", patch(time_entries::update_time_entry))
+        .route("/:id", delete(time_entries::delete_time_entry))
 }
 
 async fn api_root() -> axum::Json<ApiRoot> {
