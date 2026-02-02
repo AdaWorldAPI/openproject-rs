@@ -34,9 +34,13 @@ COPY crates/op-notifications/Cargo.toml crates/op-notifications/
 COPY crates/op-attachments/Cargo.toml crates/op-attachments/
 COPY crates/op-journals/Cargo.toml crates/op-journals/
 COPY crates/op-server/Cargo.toml crates/op-server/
+COPY crates/op-projects/Cargo.toml crates/op-projects/
+COPY crates/op-work-packages/Cargo.toml crates/op-work-packages/
+COPY crates/op-users/Cargo.toml crates/op-users/
+COPY crates/op-cli/Cargo.toml crates/op-cli/
 
 # Create dummy lib.rs files for all crates
-RUN for dir in op-core op-models op-contracts op-auth op-services op-db op-queries op-api op-notifications op-attachments op-journals; do \
+RUN for dir in op-core op-models op-contracts op-auth op-services op-db op-queries op-api op-notifications op-attachments op-journals op-projects op-work-packages op-users op-cli; do \
     mkdir -p crates/$dir/src && \
     echo 'pub fn dummy() {}' > crates/$dir/src/lib.rs; \
     done
