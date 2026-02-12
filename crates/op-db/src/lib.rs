@@ -37,6 +37,9 @@ pub mod versions;
 pub mod members;
 pub mod activities;
 pub mod categories;
+pub mod relations;
+pub mod watchers;
+pub mod attachments;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -56,3 +59,6 @@ pub use versions::{CreateVersionDto, UpdateVersionDto, VersionRepository, Versio
 pub use members::{CreateMemberDto, UpdateMemberDto, MemberRepository, MemberRow, MemberWithRoles};
 pub use activities::{CreateActivityDto, UpdateActivityDto, ActivityRepository, ActivityRow};
 pub use categories::{CreateCategoryDto, UpdateCategoryDto, CategoryRepository, CategoryRow};
+pub use relations::{relation_type, CreateRelationDto, UpdateRelationDto, RelationRepository, RelationRow};
+pub use watchers::{CreateWatcherDto, UpdateWatcherDto, WatcherRepository, WatcherRow, WatcherWithUser};
+pub use attachments::{status as attachment_status, CreateAttachmentDto, UpdateAttachmentDto, AttachmentRepository, AttachmentRow};

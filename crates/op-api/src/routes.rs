@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{activities, categories, memberships, priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
+use crate::handlers::{activities, attachments, categories, memberships, priorities, projects, queries, relations, roles, statuses, time_entries, types, users, versions, watchers, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -31,6 +31,8 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/memberships", memberships_router())
         .nest("/categories", categories_router())
         .nest("/time_entries", time_entries_router())
+        .nest("/relations", relations_router())
+        .nest("/attachments", attachments_router())
 }
 
 fn work_packages_router() -> Router<AppState> {
@@ -40,6 +42,17 @@ fn work_packages_router() -> Router<AppState> {
         .route("/:id", get(work_packages::get_work_package))
         .route("/:id", patch(work_packages::update_work_package))
         .route("/:id", delete(work_packages::delete_work_package))
+        // Relations
+        .route("/:id/relations", get(relations::list_work_package_relations))
+        // Watchers
+        .route("/:id/watchers", get(watchers::list_work_package_watchers))
+        .route("/:id/watchers", post(watchers::add_work_package_watcher))
+        .route("/:id/watchers/:user_id", delete(watchers::remove_work_package_watcher))
+        .route("/:id/watching", get(watchers::is_watching_work_package))
+        .route("/:id/watch", post(watchers::watch_work_package))
+        .route("/:id/watch", delete(watchers::unwatch_work_package))
+        // Attachments
+        .route("/:id/attachments", get(attachments::list_work_package_attachments))
 }
 
 fn projects_router() -> Router<AppState> {
@@ -162,6 +175,24 @@ fn activities_router() -> Router<AppState> {
         .route("/:id", get(activities::get_activity))
         .route("/:id", patch(activities::update_activity))
         .route("/:id", delete(activities::delete_activity))
+}
+
+fn relations_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(relations::list_relations))
+        .route("/", post(relations::create_relation))
+        .route("/:id", get(relations::get_relation))
+        .route("/:id", patch(relations::update_relation))
+        .route("/:id", delete(relations::delete_relation))
+}
+
+fn attachments_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(attachments::list_attachments))
+        .route("/", post(attachments::create_attachment))
+        .route("/:id", get(attachments::get_attachment))
+        .route("/:id", patch(attachments::update_attachment))
+        .route("/:id", delete(attachments::delete_attachment))
 }
 
 async fn api_root() -> axum::Json<ApiRoot> {

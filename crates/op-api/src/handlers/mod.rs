@@ -15,6 +15,9 @@ pub mod activities;
 pub mod categories;
 pub mod queries;
 pub mod time_entries;
+pub mod relations;
+pub mod watchers;
+pub mod attachments;
 
 pub use work_packages::*;
 pub use projects::*;
@@ -29,3 +32,6 @@ pub use activities::*;
 pub use categories::*;
 pub use queries::*;
 pub use time_entries::*;
+pub use relations::*;
+pub use watchers::*;
+pub use attachments::*;
