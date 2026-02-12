@@ -1,6 +1,6 @@
-//! Statuses API handlers
+//! Roles API handlers
 //!
-//! Mirrors: lib/api/v3/statuses/*
+//! Mirrors: lib/api/v3/roles/*
 
 use axum::{
     extract::{Path, State},
@@ -9,22 +9,22 @@ use axum::{
     Json,
 };
 use op_core::traits::Id;
-use op_db::{Repository, StatusRepository};
+use op_db::{Repository, RoleRepository};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{ApiError, ApiResult};
 use crate::extractors::{AppState, AuthenticatedUser, HalResponse, Pagination};
 
-/// List all statuses
+/// List all roles
 ///
-/// GET /api/v3/statuses
-pub async fn list_statuses(
+/// GET /api/v3/roles
+pub async fn list_roles(
     State(state): State<AppState>,
     _user: AuthenticatedUser,
     pagination: Pagination,
 ) -> ApiResult<impl IntoResponse> {
     let pool = state.pool()?;
-    let repo = StatusRepository::new(pool.clone());
+    let repo = RoleRepository::new(pool.clone());
 
     let rows = repo
         .find_all(pagination.page_size as i64, pagination.offset as i64)
@@ -36,12 +36,17 @@ pub async fn list_statuses(
         .await
         .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
 
-    let elements: Vec<StatusResponse> = rows
-        .into_iter()
-        .map(|row| StatusResponse::from_row(row))
-        .collect();
+    // Fetch permissions for each role
+    let mut elements = Vec::with_capacity(rows.len());
+    for row in rows {
+        let permissions = repo
+            .get_permissions(row.id)
+            .await
+            .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+        elements.push(RoleResponse::from_row(row, permissions));
+    }
 
-    let collection = StatusCollection {
+    let collection = RoleCollection {
         type_name: "Collection".into(),
         total: total as usize,
         count: elements.len(),
@@ -53,121 +58,139 @@ pub async fn list_statuses(
     Ok(HalResponse(collection))
 }
 
-/// Get a single status
+/// Get a single role
 ///
-/// GET /api/v3/statuses/:id
-pub async fn get_status(
+/// GET /api/v3/roles/:id
+pub async fn get_role(
     State(state): State<AppState>,
     _user: AuthenticatedUser,
     Path(id): Path<Id>,
 ) -> ApiResult<impl IntoResponse> {
     let pool = state.pool()?;
-    let repo = StatusRepository::new(pool.clone());
+    let repo = RoleRepository::new(pool.clone());
 
     let row = repo
         .find_by_id(id)
         .await
         .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?
-        .ok_or_else(|| ApiError::not_found("Status", id))?;
+        .ok_or_else(|| ApiError::not_found("Role", id))?;
 
-    Ok(HalResponse(StatusResponse::from_row(row)))
+    let permissions = repo
+        .get_permissions(id)
+        .await
+        .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+
+    Ok(HalResponse(RoleResponse::from_row(row, permissions)))
 }
 
-/// Create a new status (admin only)
+/// Create a new role (admin only)
 ///
-/// POST /api/v3/statuses
-pub async fn create_status(
+/// POST /api/v3/roles
+pub async fn create_role(
     State(state): State<AppState>,
     user: AuthenticatedUser,
-    Json(dto): Json<CreateStatusRequest>,
+    Json(dto): Json<CreateRoleRequest>,
 ) -> ApiResult<impl IntoResponse> {
     if !user.0.is_admin() {
-        return Err(ApiError::forbidden("Only administrators can create statuses."));
+        return Err(ApiError::forbidden("Only administrators can create roles."));
     }
 
     let pool = state.pool()?;
-    let repo = StatusRepository::new(pool.clone());
+    let repo = RoleRepository::new(pool.clone());
 
-    let create_dto = op_db::CreateStatusDto {
+    let create_dto = op_db::CreateRoleDto {
         name: dto.name,
-        is_closed: dto.is_closed.unwrap_or(false),
-        is_default: dto.is_default.unwrap_or(false),
-        is_readonly: dto.is_readonly.unwrap_or(false),
         position: dto.position,
-        default_done_ratio: dto.default_done_ratio.unwrap_or(0),
-        color_id: dto.color_id,
+        role_type: "Role".to_string(),
     };
 
     let row = repo
         .create(create_dto)
         .await
         .map_err(|e| match e {
-            op_db::RepositoryError::Validation(msg) => ApiError::bad_request(msg),
             op_db::RepositoryError::Conflict(msg) => ApiError::conflict(msg),
             _ => ApiError::internal(format!("Database error: {}", e)),
         })?;
 
-    Ok((StatusCode::CREATED, HalResponse(StatusResponse::from_row(row))))
+    // Set permissions if provided
+    if let Some(permissions) = dto.permissions {
+        repo.set_permissions(row.id, &permissions)
+            .await
+            .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+    }
+
+    let permissions = repo
+        .get_permissions(row.id)
+        .await
+        .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+
+    Ok((StatusCode::CREATED, HalResponse(RoleResponse::from_row(row, permissions))))
 }
 
-/// Update a status (admin only)
+/// Update a role (admin only)
 ///
-/// PATCH /api/v3/statuses/:id
-pub async fn update_status(
+/// PATCH /api/v3/roles/:id
+pub async fn update_role(
     State(state): State<AppState>,
     user: AuthenticatedUser,
     Path(id): Path<Id>,
-    Json(dto): Json<UpdateStatusRequest>,
+    Json(dto): Json<UpdateRoleRequest>,
 ) -> ApiResult<impl IntoResponse> {
     if !user.0.is_admin() {
-        return Err(ApiError::forbidden("Only administrators can update statuses."));
+        return Err(ApiError::forbidden("Only administrators can update roles."));
     }
 
     let pool = state.pool()?;
-    let repo = StatusRepository::new(pool.clone());
+    let repo = RoleRepository::new(pool.clone());
 
-    let update_dto = op_db::UpdateStatusDto {
+    let update_dto = op_db::UpdateRoleDto {
         name: dto.name,
-        is_closed: dto.is_closed,
-        is_default: dto.is_default,
-        is_readonly: dto.is_readonly,
         position: dto.position,
-        default_done_ratio: dto.default_done_ratio,
-        color_id: dto.color_id,
     };
 
     let row = repo
         .update(id, update_dto)
         .await
         .map_err(|e| match e {
-            op_db::RepositoryError::NotFound(_) => ApiError::not_found("Status", id),
-            op_db::RepositoryError::Validation(msg) => ApiError::bad_request(msg),
+            op_db::RepositoryError::NotFound(_) => ApiError::not_found("Role", id),
             op_db::RepositoryError::Conflict(msg) => ApiError::conflict(msg),
             _ => ApiError::internal(format!("Database error: {}", e)),
         })?;
 
-    Ok(HalResponse(StatusResponse::from_row(row)))
+    // Set permissions if provided
+    if let Some(permissions) = dto.permissions {
+        repo.set_permissions(id, &permissions)
+            .await
+            .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+    }
+
+    let permissions = repo
+        .get_permissions(id)
+        .await
+        .map_err(|e| ApiError::internal(format!("Database error: {}", e)))?;
+
+    Ok(HalResponse(RoleResponse::from_row(row, permissions)))
 }
 
-/// Delete a status (admin only)
+/// Delete a role (admin only)
 ///
-/// DELETE /api/v3/statuses/:id
-pub async fn delete_status(
+/// DELETE /api/v3/roles/:id
+pub async fn delete_role(
     State(state): State<AppState>,
     user: AuthenticatedUser,
     Path(id): Path<Id>,
 ) -> ApiResult<impl IntoResponse> {
     if !user.0.is_admin() {
-        return Err(ApiError::forbidden("Only administrators can delete statuses."));
+        return Err(ApiError::forbidden("Only administrators can delete roles."));
     }
 
     let pool = state.pool()?;
-    let repo = StatusRepository::new(pool.clone());
+    let repo = RoleRepository::new(pool.clone());
 
     repo.delete(id)
         .await
         .map_err(|e| match e {
-            op_db::RepositoryError::NotFound(_) => ApiError::not_found("Status", id),
+            op_db::RepositoryError::NotFound(_) => ApiError::not_found("Role", id),
             op_db::RepositoryError::Conflict(msg) => ApiError::conflict(msg),
             _ => ApiError::internal(format!("Database error: {}", e)),
         })?;
@@ -178,32 +201,24 @@ pub async fn delete_status(
 // Request types
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CreateStatusRequest {
+pub struct CreateRoleRequest {
     pub name: String,
-    pub is_closed: Option<bool>,
-    pub is_default: Option<bool>,
-    pub is_readonly: Option<bool>,
     pub position: Option<i32>,
-    pub default_done_ratio: Option<i32>,
-    pub color_id: Option<i64>,
+    pub permissions: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UpdateStatusRequest {
+pub struct UpdateRoleRequest {
     pub name: Option<String>,
-    pub is_closed: Option<bool>,
-    pub is_default: Option<bool>,
-    pub is_readonly: Option<bool>,
     pub position: Option<i32>,
-    pub default_done_ratio: Option<i32>,
-    pub color_id: Option<i64>,
+    pub permissions: Option<Vec<String>>,
 }
 
 // Response types
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct StatusCollection {
+struct RoleCollection {
     #[serde(rename = "_type")]
     type_name: String,
     total: usize,
@@ -211,32 +226,28 @@ struct StatusCollection {
     page_size: usize,
     offset: usize,
     #[serde(rename = "_embedded")]
-    elements: Vec<StatusResponse>,
+    elements: Vec<RoleResponse>,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct StatusResponse {
+struct RoleResponse {
     #[serde(rename = "_type")]
     type_name: String,
     id: Id,
     name: String,
-    is_closed: bool,
-    is_default: bool,
-    is_readonly: bool,
     position: i32,
-    default_done_ratio: i32,
+    builtin: bool,
+    permissions: Vec<String>,
     #[serde(rename = "_links")]
-    links: StatusLinks,
+    links: RoleLinks,
 }
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-struct StatusLinks {
+struct RoleLinks {
     #[serde(rename = "self")]
     self_link: Link,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    color: Option<Link>,
 }
 
 #[derive(Debug, Serialize)]
@@ -244,26 +255,22 @@ struct Link {
     href: String,
 }
 
-impl StatusResponse {
-    fn from_row(row: op_db::StatusRow) -> Self {
-        let color_link = row.color_id.map(|cid| Link {
-            href: format!("/api/v3/colors/{}", cid),
-        });
+impl RoleResponse {
+    fn from_row(row: op_db::RoleRow, permissions: Vec<String>) -> Self {
+        let id = row.id;
+        let builtin = row.is_builtin();
 
-        StatusResponse {
-            type_name: "Status".into(),
-            id: row.id,
+        RoleResponse {
+            type_name: "Role".into(),
+            id,
             name: row.name,
-            is_closed: row.is_closed,
-            is_default: row.is_default,
-            is_readonly: row.is_readonly,
             position: row.position,
-            default_done_ratio: row.default_done_ratio,
-            links: StatusLinks {
+            builtin,
+            permissions,
+            links: RoleLinks {
                 self_link: Link {
-                    href: format!("/api/v3/statuses/{}", row.id),
+                    href: format!("/api/v3/roles/{}", id),
                 },
-                color: color_link,
             },
         }
     }

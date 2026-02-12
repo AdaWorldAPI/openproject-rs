@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{priorities, projects, queries, statuses, time_entries, types, users, work_packages};
+use crate::handlers::{activities, attachments, categories, journals, memberships, priorities, projects, queries, relations, roles, statuses, time_entries, types, users, versions, watchers, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -26,7 +26,14 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/statuses", statuses_router())
         .nest("/types", types_router())
         .nest("/priorities", priorities_router())
+        .nest("/roles", roles_router())
+        .nest("/versions", versions_router())
+        .nest("/memberships", memberships_router())
+        .nest("/categories", categories_router())
         .nest("/time_entries", time_entries_router())
+        .nest("/relations", relations_router())
+        .nest("/attachments", attachments_router())
+        .nest("/activities", journals_router())
 }
 
 fn work_packages_router() -> Router<AppState> {
@@ -36,6 +43,20 @@ fn work_packages_router() -> Router<AppState> {
         .route("/:id", get(work_packages::get_work_package))
         .route("/:id", patch(work_packages::update_work_package))
         .route("/:id", delete(work_packages::delete_work_package))
+        // Relations
+        .route("/:id/relations", get(relations::list_work_package_relations))
+        // Watchers
+        .route("/:id/watchers", get(watchers::list_work_package_watchers))
+        .route("/:id/watchers", post(watchers::add_work_package_watcher))
+        .route("/:id/watchers/:user_id", delete(watchers::remove_work_package_watcher))
+        .route("/:id/watching", get(watchers::is_watching_work_package))
+        .route("/:id/watch", post(watchers::watch_work_package))
+        .route("/:id/watch", delete(watchers::unwatch_work_package))
+        // Attachments
+        .route("/:id/attachments", get(attachments::list_work_package_attachments))
+        // Activities (journals)
+        .route("/:id/activities", get(journals::list_work_package_activities))
+        .route("/:id/revisions", get(journals::list_work_package_revisions))
 }
 
 fn projects_router() -> Router<AppState> {
@@ -45,7 +66,11 @@ fn projects_router() -> Router<AppState> {
         .route("/:id", get(projects::get_project))
         .route("/:id", patch(projects::update_project))
         .route("/:id", delete(projects::delete_project))
+        .route("/:id/archive", post(projects::archive_project))
+        .route("/:id/unarchive", post(projects::unarchive_project))
         .route("/:id/types", get(types::list_project_types))
+        .route("/:id/versions", get(versions::list_project_versions))
+        .route("/:id/categories", get(categories::list_project_categories))
 }
 
 fn users_router() -> Router<AppState> {
@@ -56,24 +81,71 @@ fn users_router() -> Router<AppState> {
         .route("/:id", get(users::get_user))
         .route("/:id", patch(users::update_user))
         .route("/:id", delete(users::delete_user))
+        .route("/:id/lock", post(users::lock_user))
+        .route("/:id/lock", delete(users::unlock_user))
 }
 
 fn statuses_router() -> Router<AppState> {
     Router::new()
         .route("/", get(statuses::list_statuses))
+        .route("/", post(statuses::create_status))
         .route("/:id", get(statuses::get_status))
+        .route("/:id", patch(statuses::update_status))
+        .route("/:id", delete(statuses::delete_status))
 }
 
 fn types_router() -> Router<AppState> {
     Router::new()
         .route("/", get(types::list_types))
+        .route("/", post(types::create_type))
         .route("/:id", get(types::get_type))
+        .route("/:id", patch(types::update_type))
+        .route("/:id", delete(types::delete_type))
 }
 
 fn priorities_router() -> Router<AppState> {
     Router::new()
         .route("/", get(priorities::list_priorities))
+        .route("/", post(priorities::create_priority))
         .route("/:id", get(priorities::get_priority))
+        .route("/:id", patch(priorities::update_priority))
+        .route("/:id", delete(priorities::delete_priority))
+}
+
+fn roles_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(roles::list_roles))
+        .route("/", post(roles::create_role))
+        .route("/:id", get(roles::get_role))
+        .route("/:id", patch(roles::update_role))
+        .route("/:id", delete(roles::delete_role))
+}
+
+fn versions_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(versions::list_versions))
+        .route("/", post(versions::create_version))
+        .route("/:id", get(versions::get_version))
+        .route("/:id", patch(versions::update_version))
+        .route("/:id", delete(versions::delete_version))
+}
+
+fn memberships_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(memberships::list_memberships))
+        .route("/", post(memberships::create_membership))
+        .route("/:id", get(memberships::get_membership))
+        .route("/:id", patch(memberships::update_membership))
+        .route("/:id", delete(memberships::delete_membership))
+}
+
+fn categories_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(categories::list_categories))
+        .route("/", post(categories::create_category))
+        .route("/:id", get(categories::get_category))
+        .route("/:id", patch(categories::update_category))
+        .route("/:id", delete(categories::delete_category))
 }
 
 fn queries_router() -> Router<AppState> {
@@ -97,6 +169,41 @@ fn time_entries_router() -> Router<AppState> {
         .route("/:id", get(time_entries::get_time_entry))
         .route("/:id", patch(time_entries::update_time_entry))
         .route("/:id", delete(time_entries::delete_time_entry))
+        .nest("/activities", activities_router())
+}
+
+fn activities_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(activities::list_activities))
+        .route("/", post(activities::create_activity))
+        .route("/:id", get(activities::get_activity))
+        .route("/:id", patch(activities::update_activity))
+        .route("/:id", delete(activities::delete_activity))
+}
+
+fn relations_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(relations::list_relations))
+        .route("/", post(relations::create_relation))
+        .route("/:id", get(relations::get_relation))
+        .route("/:id", patch(relations::update_relation))
+        .route("/:id", delete(relations::delete_relation))
+}
+
+fn attachments_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(attachments::list_attachments))
+        .route("/", post(attachments::create_attachment))
+        .route("/:id", get(attachments::get_attachment))
+        .route("/:id", patch(attachments::update_attachment))
+        .route("/:id", delete(attachments::delete_attachment))
+}
+
+fn journals_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(journals::list_activities))
+        .route("/:id", get(journals::get_activity))
+        .route("/:id", patch(journals::update_activity))
 }
 
 async fn api_root() -> axum::Json<ApiRoot> {
