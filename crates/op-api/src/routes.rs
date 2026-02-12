@@ -45,6 +45,8 @@ fn projects_router() -> Router<AppState> {
         .route("/:id", get(projects::get_project))
         .route("/:id", patch(projects::update_project))
         .route("/:id", delete(projects::delete_project))
+        .route("/:id/archive", post(projects::archive_project))
+        .route("/:id/unarchive", post(projects::unarchive_project))
         .route("/:id/types", get(types::list_project_types))
 }
 
@@ -56,24 +58,35 @@ fn users_router() -> Router<AppState> {
         .route("/:id", get(users::get_user))
         .route("/:id", patch(users::update_user))
         .route("/:id", delete(users::delete_user))
+        .route("/:id/lock", post(users::lock_user))
+        .route("/:id/lock", delete(users::unlock_user))
 }
 
 fn statuses_router() -> Router<AppState> {
     Router::new()
         .route("/", get(statuses::list_statuses))
+        .route("/", post(statuses::create_status))
         .route("/:id", get(statuses::get_status))
+        .route("/:id", patch(statuses::update_status))
+        .route("/:id", delete(statuses::delete_status))
 }
 
 fn types_router() -> Router<AppState> {
     Router::new()
         .route("/", get(types::list_types))
+        .route("/", post(types::create_type))
         .route("/:id", get(types::get_type))
+        .route("/:id", patch(types::update_type))
+        .route("/:id", delete(types::delete_type))
 }
 
 fn priorities_router() -> Router<AppState> {
     Router::new()
         .route("/", get(priorities::list_priorities))
+        .route("/", post(priorities::create_priority))
         .route("/:id", get(priorities::get_priority))
+        .route("/:id", patch(priorities::update_priority))
+        .route("/:id", delete(priorities::delete_priority))
 }
 
 fn queries_router() -> Router<AppState> {

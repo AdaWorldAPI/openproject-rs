@@ -29,6 +29,9 @@ pub mod users;
 pub mod projects;
 pub mod query_executor;
 pub mod time_entries;
+pub mod statuses;
+pub mod priorities;
+pub mod types;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -36,7 +39,10 @@ pub use repository::{
     Pagination, PaginatedResult, Repository, RepositoryContext, RepositoryError, RepositoryResult,
 };
 pub use work_packages::{CreateWorkPackageDto, UpdateWorkPackageDto, WorkPackageRepository};
-pub use users::{CreateUserDto, UpdateUserDto, UserRepository, UserRow};
+pub use users::{status as user_status, CreateUserDto, UpdateUserDto, UserRepository, UserRow};
 pub use projects::{CreateProjectDto, UpdateProjectDto, ProjectRepository, ProjectRow};
 pub use query_executor::{WorkPackageQueryExecutor, WorkPackageRow};
 pub use time_entries::{CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntryRepository, TimeEntryRow};
+pub use statuses::{CreateStatusDto, UpdateStatusDto, StatusRepository, StatusRow};
+pub use priorities::{CreatePriorityDto, UpdatePriorityDto, PriorityRepository, PriorityRow};
+pub use types::{CreateTypeDto, UpdateTypeDto, TypeRepository, TypeRow};
