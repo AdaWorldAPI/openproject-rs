@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{activities, attachments, categories, memberships, priorities, projects, queries, relations, roles, statuses, time_entries, types, users, versions, watchers, work_packages};
+use crate::handlers::{activities, attachments, categories, journals, memberships, priorities, projects, queries, relations, roles, statuses, time_entries, types, users, versions, watchers, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -33,6 +33,7 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/time_entries", time_entries_router())
         .nest("/relations", relations_router())
         .nest("/attachments", attachments_router())
+        .nest("/activities", journals_router())
 }
 
 fn work_packages_router() -> Router<AppState> {
@@ -53,6 +54,9 @@ fn work_packages_router() -> Router<AppState> {
         .route("/:id/watch", delete(watchers::unwatch_work_package))
         // Attachments
         .route("/:id/attachments", get(attachments::list_work_package_attachments))
+        // Activities (journals)
+        .route("/:id/activities", get(journals::list_work_package_activities))
+        .route("/:id/revisions", get(journals::list_work_package_revisions))
 }
 
 fn projects_router() -> Router<AppState> {
@@ -193,6 +197,13 @@ fn attachments_router() -> Router<AppState> {
         .route("/:id", get(attachments::get_attachment))
         .route("/:id", patch(attachments::update_attachment))
         .route("/:id", delete(attachments::delete_attachment))
+}
+
+fn journals_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(journals::list_activities))
+        .route("/:id", get(journals::get_activity))
+        .route("/:id", patch(journals::update_activity))
 }
 
 async fn api_root() -> axum::Json<ApiRoot> {

@@ -18,6 +18,7 @@ pub mod time_entries;
 pub mod relations;
 pub mod watchers;
 pub mod attachments;
+pub mod journals;
 
 pub use work_packages::*;
 pub use projects::*;
@@ -35,3 +36,4 @@ pub use time_entries::*;
 pub use relations::*;
 pub use watchers::*;
 pub use attachments::*;
+pub use journals::*;
