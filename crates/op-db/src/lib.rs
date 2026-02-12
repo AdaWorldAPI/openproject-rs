@@ -40,6 +40,7 @@ pub mod categories;
 pub mod relations;
 pub mod watchers;
 pub mod attachments;
+pub mod queries;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -62,3 +63,4 @@ pub use categories::{CreateCategoryDto, UpdateCategoryDto, CategoryRepository, C
 pub use relations::{relation_type, CreateRelationDto, UpdateRelationDto, RelationRepository, RelationRow};
 pub use watchers::{CreateWatcherDto, UpdateWatcherDto, WatcherRepository, WatcherRow, WatcherWithUser};
 pub use attachments::{status as attachment_status, CreateAttachmentDto, UpdateAttachmentDto, AttachmentRepository, AttachmentRow};
+pub use queries::{CreateQueryDto, UpdateQueryDto, QueryRepository, QueryRow, QueryWithStarred};
