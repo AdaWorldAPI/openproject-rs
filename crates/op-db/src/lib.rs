@@ -35,6 +35,8 @@ pub mod types;
 pub mod roles;
 pub mod versions;
 pub mod members;
+pub mod activities;
+pub mod categories;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -52,3 +54,5 @@ pub use types::{CreateTypeDto, UpdateTypeDto, TypeRepository, TypeRow};
 pub use roles::{CreateRoleDto, UpdateRoleDto, RoleRepository, RoleRow};
 pub use versions::{CreateVersionDto, UpdateVersionDto, VersionRepository, VersionRow};
 pub use members::{CreateMemberDto, UpdateMemberDto, MemberRepository, MemberRow, MemberWithRoles};
+pub use activities::{CreateActivityDto, UpdateActivityDto, ActivityRepository, ActivityRow};
+pub use categories::{CreateCategoryDto, UpdateCategoryDto, CategoryRepository, CategoryRow};

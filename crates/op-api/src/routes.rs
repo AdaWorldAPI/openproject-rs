@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{memberships, priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
+use crate::handlers::{activities, categories, memberships, priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -29,6 +29,7 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/roles", roles_router())
         .nest("/versions", versions_router())
         .nest("/memberships", memberships_router())
+        .nest("/categories", categories_router())
         .nest("/time_entries", time_entries_router())
 }
 
@@ -52,6 +53,7 @@ fn projects_router() -> Router<AppState> {
         .route("/:id/unarchive", post(projects::unarchive_project))
         .route("/:id/types", get(types::list_project_types))
         .route("/:id/versions", get(versions::list_project_versions))
+        .route("/:id/categories", get(categories::list_project_categories))
 }
 
 fn users_router() -> Router<AppState> {
@@ -120,6 +122,15 @@ fn memberships_router() -> Router<AppState> {
         .route("/:id", delete(memberships::delete_membership))
 }
 
+fn categories_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(categories::list_categories))
+        .route("/", post(categories::create_category))
+        .route("/:id", get(categories::get_category))
+        .route("/:id", patch(categories::update_category))
+        .route("/:id", delete(categories::delete_category))
+}
+
 fn queries_router() -> Router<AppState> {
     Router::new()
         .route("/", get(queries::list_queries))
@@ -141,6 +152,16 @@ fn time_entries_router() -> Router<AppState> {
         .route("/:id", get(time_entries::get_time_entry))
         .route("/:id", patch(time_entries::update_time_entry))
         .route("/:id", delete(time_entries::delete_time_entry))
+        .nest("/activities", activities_router())
+}
+
+fn activities_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(activities::list_activities))
+        .route("/", post(activities::create_activity))
+        .route("/:id", get(activities::get_activity))
+        .route("/:id", patch(activities::update_activity))
+        .route("/:id", delete(activities::delete_activity))
 }
 
 async fn api_root() -> axum::Json<ApiRoot> {

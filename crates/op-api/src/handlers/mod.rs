@@ -11,6 +11,8 @@ pub mod priorities;
 pub mod roles;
 pub mod versions;
 pub mod memberships;
+pub mod activities;
+pub mod categories;
 pub mod queries;
 pub mod time_entries;
 
@@ -23,5 +25,7 @@ pub use priorities::*;
 pub use roles::*;
 pub use versions::*;
 pub use memberships::*;
+pub use activities::*;
+pub use categories::*;
 pub use queries::*;
 pub use time_entries::*;
