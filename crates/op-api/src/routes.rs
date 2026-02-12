@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{priorities, projects, queries, statuses, time_entries, types, users, work_packages};
+use crate::handlers::{priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -26,6 +26,8 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/statuses", statuses_router())
         .nest("/types", types_router())
         .nest("/priorities", priorities_router())
+        .nest("/roles", roles_router())
+        .nest("/versions", versions_router())
         .nest("/time_entries", time_entries_router())
 }
 
@@ -48,6 +50,7 @@ fn projects_router() -> Router<AppState> {
         .route("/:id/archive", post(projects::archive_project))
         .route("/:id/unarchive", post(projects::unarchive_project))
         .route("/:id/types", get(types::list_project_types))
+        .route("/:id/versions", get(versions::list_project_versions))
 }
 
 fn users_router() -> Router<AppState> {
@@ -87,6 +90,24 @@ fn priorities_router() -> Router<AppState> {
         .route("/:id", get(priorities::get_priority))
         .route("/:id", patch(priorities::update_priority))
         .route("/:id", delete(priorities::delete_priority))
+}
+
+fn roles_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(roles::list_roles))
+        .route("/", post(roles::create_role))
+        .route("/:id", get(roles::get_role))
+        .route("/:id", patch(roles::update_role))
+        .route("/:id", delete(roles::delete_role))
+}
+
+fn versions_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(versions::list_versions))
+        .route("/", post(versions::create_version))
+        .route("/:id", get(versions::get_version))
+        .route("/:id", patch(versions::update_version))
+        .route("/:id", delete(versions::delete_version))
 }
 
 fn queries_router() -> Router<AppState> {

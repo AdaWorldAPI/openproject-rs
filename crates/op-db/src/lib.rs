@@ -32,6 +32,8 @@ pub mod time_entries;
 pub mod statuses;
 pub mod priorities;
 pub mod types;
+pub mod roles;
+pub mod versions;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -46,3 +48,5 @@ pub use time_entries::{CreateTimeEntryDto, UpdateTimeEntryDto, TimeEntryReposito
 pub use statuses::{CreateStatusDto, UpdateStatusDto, StatusRepository, StatusRow};
 pub use priorities::{CreatePriorityDto, UpdatePriorityDto, PriorityRepository, PriorityRow};
 pub use types::{CreateTypeDto, UpdateTypeDto, TypeRepository, TypeRow};
+pub use roles::{CreateRoleDto, UpdateRoleDto, RoleRepository, RoleRow};
+pub use versions::{CreateVersionDto, UpdateVersionDto, VersionRepository, VersionRow};

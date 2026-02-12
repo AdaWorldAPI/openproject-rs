@@ -8,6 +8,8 @@ pub mod users;
 pub mod statuses;
 pub mod types;
 pub mod priorities;
+pub mod roles;
+pub mod versions;
 pub mod queries;
 pub mod time_entries;
 
@@ -17,5 +19,7 @@ pub use users::*;
 pub use statuses::*;
 pub use types::*;
 pub use priorities::*;
+pub use roles::*;
+pub use versions::*;
 pub use queries::*;
 pub use time_entries::*;
