@@ -9,7 +9,7 @@ use axum::{
 use serde::Serialize;
 
 use crate::extractors::AppState;
-use crate::handlers::{priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
+use crate::handlers::{memberships, priorities, projects, queries, roles, statuses, time_entries, types, users, versions, work_packages};
 
 /// Create the complete API router
 pub fn router() -> Router<AppState> {
@@ -28,6 +28,7 @@ fn api_v3_router() -> Router<AppState> {
         .nest("/priorities", priorities_router())
         .nest("/roles", roles_router())
         .nest("/versions", versions_router())
+        .nest("/memberships", memberships_router())
         .nest("/time_entries", time_entries_router())
 }
 
@@ -108,6 +109,15 @@ fn versions_router() -> Router<AppState> {
         .route("/:id", get(versions::get_version))
         .route("/:id", patch(versions::update_version))
         .route("/:id", delete(versions::delete_version))
+}
+
+fn memberships_router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(memberships::list_memberships))
+        .route("/", post(memberships::create_membership))
+        .route("/:id", get(memberships::get_membership))
+        .route("/:id", patch(memberships::update_membership))
+        .route("/:id", delete(memberships::delete_membership))
 }
 
 fn queries_router() -> Router<AppState> {

@@ -34,6 +34,7 @@ pub mod priorities;
 pub mod types;
 pub mod roles;
 pub mod versions;
+pub mod members;
 
 // Re-exports
 pub use pool::{Database, DatabaseConfig, PoolStats};
@@ -50,3 +51,4 @@ pub use priorities::{CreatePriorityDto, UpdatePriorityDto, PriorityRepository, P
 pub use types::{CreateTypeDto, UpdateTypeDto, TypeRepository, TypeRow};
 pub use roles::{CreateRoleDto, UpdateRoleDto, RoleRepository, RoleRow};
 pub use versions::{CreateVersionDto, UpdateVersionDto, VersionRepository, VersionRow};
+pub use members::{CreateMemberDto, UpdateMemberDto, MemberRepository, MemberRow, MemberWithRoles};
